@@ -1,0 +1,11 @@
+.*
+!.gitignore
+!.gitattributes
+!.vscodeignore
+!.nvmrc
+
+node_modules/
+dist/
+coverage/
+
+.vscode/
