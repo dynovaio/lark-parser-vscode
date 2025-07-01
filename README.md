@@ -2,8 +2,7 @@
 
 This extension provides language support for Lark grammar files in Visual Studio Code.
 
-![Lark Syntax Highlighting dark](images/_lark_sample_1.png)
-![Lark Syntax Highlighting light](images/_lark_sample_2.png)
+![Lark Syntax Highlighting](images/_lark_sample.png)
 
 Contributions are greatly appreciated.
 Please fork this repository and open a pull request to make grammar tweaks, add support for other subgrammars etc.
