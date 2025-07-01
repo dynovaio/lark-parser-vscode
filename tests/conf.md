@@ -1,0 +1,18 @@
+# Lark Grammar for .conf/.ini files
+
+```lark
+// Simple grammar for parsing .conf/.ini files
+// Input must end in a newline.
+
+start: _NL? section+
+
+section: "[" NAME "]" _NL item+
+item: NAME "=" VALUE? _NL
+
+NAME: /\w/+
+VALUE: /./+
+
+%import common.NEWLINE -> _NL
+%import common.WS_INLINE
+%ignore WS_INLINE
+```
