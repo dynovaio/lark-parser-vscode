@@ -1,0 +1,21 @@
+# Fruit Flies Example in Lark
+
+```lark
+// Shows how Lark deals with ambiguity
+
+start: sentence
+
+sentence: noun verb noun -> simple
+    | noun verb "like" noun -> comparative
+
+noun: adj? NOUN
+verb: VERB
+adj: ADJ
+
+NOUN: "flies" | "bananas" | "fruit"
+VERB: "like" | "flies"
+ADJ: "fruit"
+
+%import common.WS
+%ignore WS
+```
