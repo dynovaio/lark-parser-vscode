@@ -1,11 +1,15 @@
 .*
-!.gitignore
+
+!.editorconfig
 !.gitattributes
-!.vscodeignore
+!.gitignore
 !.nvmrc
+!.vscode/extensions.json
+!.vscode/launch.json
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscodeignore
 
 node_modules/
 dist/
 coverage/
-
-.vscode/
