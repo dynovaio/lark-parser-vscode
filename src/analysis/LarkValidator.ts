@@ -1,6 +1,4 @@
 import * as vscode from 'vscode';
-import { ImportResolver } from '@/features/ImportResolver';
-import { SymbolResolver, SymbolDefinition } from '@/features/SymbolResolver';
 import { LarkSymbolTable } from './LarkSymbolTable';
 import type { Scope, SymbolTableEntry } from './types.d';
 import {
@@ -24,11 +22,9 @@ import {
  * Uses LarkSymbolTable for scope-aware validation
  */
 export class LarkValidator {
-    private symbolResolver: SymbolResolver;
     private symbolTable!: LarkSymbolTable;
 
     constructor () {
-        this.symbolResolver = new SymbolResolver();
     }
 
     /**
@@ -37,7 +33,6 @@ export class LarkValidator {
      */
     public setSymbolTable(symbolTable: LarkSymbolTable): void {
         this.symbolTable = symbolTable;
-        this.symbolResolver.setSymbolTable(symbolTable);
     }
 
     /**
@@ -52,10 +47,6 @@ export class LarkValidator {
 
         // Use symbol table for scope-aware validation
         await this.symbolTable.updateFromDocument(document);
-
-        // Use SymbolResolver as planned in the architecture
-        const symbolDefinitions = this.symbolResolver.createSymbolDefinitions();
-        this.symbolResolver.markUsedSymbols(document);
 
         const allDiagnostics = [
             ...this.detectUnusedSymbols(document),

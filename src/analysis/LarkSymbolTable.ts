@@ -14,7 +14,6 @@ import type {
 interface DocumentAnalyzer {
     analyzeDocument(document: vscode.TextDocument): Promise<void>;
 }
-import type { SymbolDefinition } from '../features/SymbolResolver';
 
 /**
  * Central symbol table for Lark grammar analysis
@@ -141,22 +140,6 @@ export class LarkSymbolTable {
      */
     getRuleScope(ruleName: string): Scope | null {
         return this.scopes.get(ruleName) || null;
-    }
-
-    /**
-     * Gets symbol definitions in the format expected by SymbolResolver
-     * @returns Record mapping symbol names to their definitions
-     */
-    getSymbolDefinitions(): Record<string, SymbolDefinition> {
-        const definitions: Record<string, SymbolDefinition> = {};
-
-        // Collect symbols from all scopes
-        this.collectSymbolDefinitions(this.globalScope, definitions);
-        for (const scope of this.scopes.values()) {
-            this.collectSymbolDefinitions(scope, definitions);
-        }
-
-        return definitions;
     }
 
     /**
@@ -332,22 +315,6 @@ export class LarkSymbolTable {
         }
 
         return null;
-    }
-
-    /**
-     * Collects symbol definitions from a scope
-     * @param scope Scope to collect from
-     * @param definitions Target definitions record
-     */
-    private collectSymbolDefinitions(scope: Scope, definitions: Record<string, SymbolDefinition>): void {
-        for (const entry of scope.symbols.values()) {
-            definitions[entry.name] = {
-                line: entry.definition.range.start.line,
-                used: entry.isUsed,
-                isParameterized: entry.isParameterized,
-                baseRuleName: entry.baseRuleName
-            };
-        }
     }
 
     /**

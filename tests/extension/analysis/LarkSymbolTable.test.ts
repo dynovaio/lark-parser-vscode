@@ -139,25 +139,6 @@ suite('LarkSymbolTable', () => {
     });
 
     suite('Symbol Definitions Integration', () => {
-        test('should return symbol definitions for SymbolResolver', () => {
-            const entry1: SymbolTableEntry = createMockSymbolEntry('rule1', 'rule');
-            const entry2: SymbolTableEntry = createMockParameterizedSymbolEntry('rule2{param}', 'rule2');
-            entry1.isUsed = true;
-            entry2.isUsed = false;
-
-            symbolTable.addSymbol(entry1);
-            symbolTable.addSymbol(entry2);
-
-            const definitions = symbolTable.getSymbolDefinitions();
-
-            assert.strictEqual(Object.keys(definitions).length, 2);
-            assert.strictEqual(definitions['rule1'].used, true);
-            assert.strictEqual(definitions['rule1'].isParameterized, false);
-            assert.strictEqual(definitions['rule2{param}'].used, false);
-            assert.strictEqual(definitions['rule2{param}'].isParameterized, true);
-            assert.strictEqual(definitions['rule2{param}'].baseRuleName, 'rule2');
-        });
-
         test('should return document symbols for VS Code outline', () => {
             const entry1: SymbolTableEntry = createMockSymbolEntry('test_rule', 'rule');
             const entry2: SymbolTableEntry = createMockSymbolEntry('TEST_TERMINAL', 'terminal');
