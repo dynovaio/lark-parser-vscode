@@ -1,2 +1,13 @@
 .*
+
+**/.vscode-test.*
+**/*.map
+**/*.ts
+**/eslint.config.mjs
+**/tsconfig.json
+
+esbuild.js
+node_modules/**
+out/**
+src/**
 tests
