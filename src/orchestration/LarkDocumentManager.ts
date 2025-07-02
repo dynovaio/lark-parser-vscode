@@ -4,17 +4,16 @@ import { LarkSymbolTable } from '../analysis/LarkSymbolTable';
 import { LarkValidator } from '../analysis/LarkValidator';
 
 export class LarkDocumentManager {
-    private symbolTable: LarkSymbolTable;
+    private documentSymbolTables: Map<string, LarkSymbolTable>;
     private analyzer: LarkDocumentAnalyzer;
     private validator: LarkValidator;
     private diagnosticCollection: vscode.DiagnosticCollection;
 
     constructor (context: vscode.ExtensionContext) {
         this.diagnosticCollection = vscode.languages.createDiagnosticCollection('lark-diagnostics');
-        // These will be properly wired up in the next steps
-        this.symbolTable = new LarkSymbolTable();
-        this.analyzer = new LarkDocumentAnalyzer(this.symbolTable); // Temporary, will be decoupled
-        this.validator = new LarkValidator(); // Temporary, will be decoupled
+        this.documentSymbolTables = new Map<string, LarkSymbolTable>();
+        this.analyzer = new LarkDocumentAnalyzer();
+        this.validator = new LarkValidator();
 
         context.subscriptions.push(this.diagnosticCollection);
     }
@@ -23,7 +22,10 @@ export class LarkDocumentManager {
         // Register event listeners that will eventually call handleDocumentChange
         vscode.workspace.onDidOpenTextDocument(doc => this.handleDocumentChange(doc));
         vscode.workspace.onDidChangeTextDocument(e => this.handleDocumentChange(e.document));
-        vscode.workspace.onDidCloseTextDocument(doc => this.diagnosticCollection.delete(doc.uri));
+        vscode.workspace.onDidCloseTextDocument(doc => {
+            this.diagnosticCollection.delete(doc.uri);
+            this.documentSymbolTables.delete(doc.uri.toString());
+        });
 
         // Handle the initially active document
         if (vscode.window.activeTextEditor) {
@@ -31,15 +33,21 @@ export class LarkDocumentManager {
         }
     }
 
-    private handleDocumentChange(document: vscode.TextDocument) {
+    private async handleDocumentChange(document: vscode.TextDocument) {
         if (document.languageId !== 'lark') {
             return;
         }
-        // Core orchestration logic will be implemented here in a later step.
-        // For now, this method is just a placeholder.
+
+        // Step 1: Analyze the document to get a new symbol table.
+        const symbolTable = await this.analyzer.analyze(document);
+        this.documentSymbolTables.set(document.uri.toString(), symbolTable);
+
+        // Step 2: Validate the document using the new symbol table.
+        const diagnostics = this.validator.validate(document, symbolTable);
+        this.diagnosticCollection.set(document.uri, diagnostics);
     }
 
-    public getSymbolTable(): LarkSymbolTable {
-        return this.symbolTable;
+    public getSymbolTable(uri: vscode.Uri): LarkSymbolTable | undefined {
+        return this.documentSymbolTables.get(uri.toString());
     }
 }

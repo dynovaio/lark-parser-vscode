@@ -19,56 +19,43 @@ import {
 
 /**
  * Validates Lark grammar documents and provides diagnostics
- * Uses LarkSymbolTable for scope-aware validation
+ * The validator is now a stateless service that operates on a given symbol table.
  */
 export class LarkValidator {
-    private symbolTable!: LarkSymbolTable;
+    // The validator is stateless and no longer holds a symbol table instance.
 
     constructor () {
     }
 
     /**
-     * Sets the symbol table for scope-aware validation
-     * @param symbolTable The symbol table to use for validation
+     * Validates a text document against a given symbol table and returns diagnostics.
+     * @param document The document to validate.
+     * @param symbolTable The symbol table to use for validation.
+     * @returns An array of diagnostics.
      */
-    public setSymbolTable(symbolTable: LarkSymbolTable): void {
-        this.symbolTable = symbolTable;
-    }
-
-    /**
-     * Validates a text document and updates diagnostics
-     * @param document The document to validate
-     * @param diagnosticCollection The collection to update with diagnostics
-     */
-    async validateTextDocument(document: vscode.TextDocument, diagnosticCollection: vscode.DiagnosticCollection): Promise<void> {
+    public validate(document: vscode.TextDocument, symbolTable: LarkSymbolTable): vscode.Diagnostic[] {
         if (document.languageId !== 'lark') {
-            return;
+            return [];
         }
 
-        // Use symbol table for scope-aware validation
-        await this.symbolTable.updateFromDocument(document);
-
+        // The validator no longer updates the symbol table. It consumes it.
         const allDiagnostics = [
-            ...this.detectUnusedSymbols(document),
-            ...this.detectUndefinedSymbols(document)
+            ...this.detectUnusedSymbols(document, symbolTable),
+            ...this.detectUndefinedSymbols(document, symbolTable)
         ];
 
-        diagnosticCollection.set(document.uri, allDiagnostics);
+        return allDiagnostics;
     }
 
     /**
      * Detects unused symbols using the symbol table
      */
-    private detectUnusedSymbols(document: vscode.TextDocument): vscode.Diagnostic[] {
-        if (!this.symbolTable) {
-            return [];
-        }
-
+    private detectUnusedSymbols(document: vscode.TextDocument, symbolTable: LarkSymbolTable): vscode.Diagnostic[] {
         const diagnostics: vscode.Diagnostic[] = [];
-        const unusedSymbols = this.symbolTable.getUnusedSymbols();
+        const unusedSymbols = symbolTable.getUnusedSymbols();
 
         for (const symbolName of unusedSymbols) {
-            const symbol = this.symbolTable.resolveSymbol(symbolName);
+            const symbol = symbolTable.resolveSymbol(symbolName);
             if (symbol) {
                 const range = symbol.definition.range;
                 const diagnostic = new vscode.Diagnostic(
@@ -86,11 +73,7 @@ export class LarkValidator {
     /**
      * Detects undefined symbols using scope-aware validation
      */
-    private detectUndefinedSymbols(document: vscode.TextDocument): vscode.Diagnostic[] {
-        if (!this.symbolTable) {
-            return [];
-        }
-
+    private detectUndefinedSymbols(document: vscode.TextDocument, symbolTable: LarkSymbolTable): vscode.Diagnostic[] {
         const diagnostics: vscode.Diagnostic[] = [];
 
         for (let lineIndex = 0; lineIndex < document.lineCount; lineIndex++) {
@@ -103,14 +86,15 @@ export class LarkValidator {
 
             // Get the scope for this line
             const linePosition = new vscode.Position(lineIndex, 0);
-            const scope = this.symbolTable.getCurrentScope(linePosition);
+            const scope = symbolTable.getCurrentScope(linePosition);
 
             // Process the line for symbol references with scope awareness
             this.processLineForUndefinedSymbols(
                 lineText,
                 lineIndex,
                 scope,
-                diagnostics
+                diagnostics,
+                symbolTable
             );
         }
 
@@ -118,18 +102,15 @@ export class LarkValidator {
     }
 
     /**
-     * Processes a single line to find undefined symbol references (modern scope-aware version)
+     * Processes a single line to find undefined symbol references
      */
     private processLineForUndefinedSymbols(
         lineText: string,
         lineIndex: number,
         scope: Scope,
-        diagnostics: vscode.Diagnostic[]
+        diagnostics: vscode.Diagnostic[],
+        symbolTable: LarkSymbolTable
     ): void {
-        if (!this.symbolTable) {
-            return;
-        }
-
         let searchableText = lineText;
         let searchOffset = 0;
         let ruleParameters: string[] = []; // Parameters for parameterized rules
@@ -176,27 +157,24 @@ export class LarkValidator {
         const textWithoutParameterizedRules = searchableText.replace(/\b[a-z_][a-z_0-9]*\{[^}]*\}/g, '');
 
         // Check for undefined symbols with scope awareness
-        this.checkSymbolUsages(textWithoutParameterizedRules, searchOffset, lineIndex, scope, diagnostics, 'terminal', ruleParameters);
-        this.checkSymbolUsages(textWithoutParameterizedRules, searchOffset, lineIndex, scope, diagnostics, 'rule', ruleParameters);
+        this.checkSymbolUsages(textWithoutParameterizedRules, searchOffset, lineIndex, scope, diagnostics, 'terminal', symbolTable, ruleParameters);
+        this.checkSymbolUsages(textWithoutParameterizedRules, searchOffset, lineIndex, scope, diagnostics, 'rule', symbolTable, ruleParameters);
 
         // Check for undefined parameterized rule usages (using original text)
-        this.checkParameterizedRuleUsages(searchableText, searchOffset, lineIndex, scope, diagnostics);
+        this.checkParameterizedRuleUsages(searchableText, searchOffset, lineIndex, scope, diagnostics, symbolTable);
     }
 
     /**
-     * Checks for undefined parameterized rule usages (modern scope-aware version)
+     * Checks for undefined parameterized rule usages
      */
     private checkParameterizedRuleUsages(
         searchableText: string,
         searchOffset: number,
         lineIndex: number,
         scope: Scope,
-        diagnostics: vscode.Diagnostic[]
+        diagnostics: vscode.Diagnostic[],
+        symbolTable: LarkSymbolTable
     ): void {
-        if (!this.symbolTable) {
-            return;
-        }
-
         let parameterizedMatch;
         while ((parameterizedMatch = PARAMETERIZED_RULE_USAGE_REGEX.exec(searchableText)) !== null) {
             const baseRuleName = parameterizedMatch[1];
@@ -208,7 +186,7 @@ export class LarkValidator {
             }
 
             // Use scope-aware resolution
-            const resolvedRule = this.symbolTable.resolveParameterizedRule(baseRuleName, scope);
+            const resolvedRule = symbolTable.resolveParameterizedRule(baseRuleName, scope);
             if (!resolvedRule) {
                 const actualStartPosition = searchOffset + parameterizedMatch.index;
                 const range = createSymbolRange(lineIndex, actualStartPosition, fullRuleUsage);
@@ -225,7 +203,7 @@ export class LarkValidator {
                 if (argsMatch) {
                     const argsString = argsMatch[1];
                     const args = argsString.split(',').map(arg => arg.trim());
-                    const validationResults = this.symbolTable.validateParameterArguments(baseRuleName, args, scope);
+                    const validationResults = symbolTable.validateParameterArguments(baseRuleName, args, scope);
 
                     for (const result of validationResults) {
                         if (!result.isValid && result.errorRange) {
@@ -251,7 +229,7 @@ export class LarkValidator {
     }
 
     /**
-     * Checks for undefined symbol usages of a specific type (modern scope-aware version)
+     * Checks for undefined symbol usages of a specific type
      */
     private checkSymbolUsages(
         searchableText: string,
@@ -260,12 +238,9 @@ export class LarkValidator {
         scope: Scope,
         diagnostics: vscode.Diagnostic[],
         symbolType: 'terminal' | 'rule',
+        symbolTable: LarkSymbolTable,
         ruleParameters: string[] = []
     ): void {
-        if (!this.symbolTable) {
-            return;
-        }
-
         const usageRegex = symbolType === 'terminal' ? TERMINAL_USAGE_REGEX : RULE_USAGE_REGEX;
 
         let usageMatch;
@@ -283,7 +258,7 @@ export class LarkValidator {
             }
 
             // Use scope-aware resolution
-            const resolvedSymbol = this.symbolTable.resolveSymbol(referencedSymbolName, scope);
+            const resolvedSymbol = symbolTable.resolveSymbol(referencedSymbolName, scope);
             if (!resolvedSymbol) {
                 const actualStartPosition = searchOffset + usageMatch.index;
                 const range = createSymbolRange(lineIndex, actualStartPosition, referencedSymbolName);

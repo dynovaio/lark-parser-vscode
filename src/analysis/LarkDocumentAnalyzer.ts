@@ -7,7 +7,7 @@ import { LarkScope } from './LarkScope';
  * Analyzes Lark grammar documents and populates the symbol table
  */
 export class LarkDocumentAnalyzer {
-    private symbolTable: LarkSymbolTable;
+    // The analyzer is now stateless and does not hold a symbol table instance.
 
     // Enhanced regex patterns for better parsing
     private static readonly PATTERNS = {
@@ -45,8 +45,27 @@ export class LarkDocumentAnalyzer {
         DIRECTIVE: /^%(ignore|import|declare|override|extend)\b.*$/
     };
 
-    constructor (symbolTable: LarkSymbolTable) {
-        this.symbolTable = symbolTable;
+    /**
+     * Analyzes a Lark document and returns a new symbol table.
+     * This method is the main entry point for the stateless analyzer.
+     * @param document The document to analyze.
+     * @returns A new LarkSymbolTable populated with the analysis results.
+     */
+    public async analyze(document: vscode.TextDocument): Promise<LarkSymbolTable> {
+        const symbolTable = new LarkSymbolTable();
+        // The document context is no longer stored in the symbol table.
+        // symbolTable.setDocumentContext(document.uri, document.version);
+
+        const text = document.getText();
+        const lines = text.split('\n');
+
+        // The analysis process is now a pipeline that populates the new symbol table.
+        await this.parseGlobalDirectives(document, lines, symbolTable);
+        await this.parseSymbolDefinitions(document, lines, symbolTable);
+        await this.buildScopeHierarchy(document, lines, symbolTable);
+        await this.collectReferences(document, lines, symbolTable);
+
+        return symbolTable;
     }
 
     /**
@@ -55,28 +74,17 @@ export class LarkDocumentAnalyzer {
      * @returns Promise that resolves when analysis is complete
      */
     public async analyzeDocument(document: vscode.TextDocument): Promise<void> {
-        // Set document context in symbol table (needed for clearDocument to work)
-        this.symbolTable.setDocumentContext(document.uri, document.version);
-
-        // Clear existing symbols for this document
-        this.symbolTable.clearDocument(document.uri);
-
-        const text = document.getText();
-        const lines = text.split('\n');
-
-        // Follow planned architecture structure
-        await this.parseGlobalDirectives(document, lines);
-        await this.parseSymbolDefinitions(document, lines);
-        await this.buildScopeHierarchy(document, lines);
-
-        // Second pass: collect symbol references and validate
-        await this.collectReferences(document, lines);
+        // This method is now deprecated and will be removed.
+        // For now, it can be an alias for the new stateless analysis.
+        const newSymbolTable = await this.analyze(document);
+        // The old implementation modified a shared symbol table, which is no longer the case.
+        // This method is kept for compatibility during refactoring but should not be used.
     }
 
     /**
      * First phase: Parse global directives (imports, declares, ignores)
      */
-    private async parseGlobalDirectives(document: vscode.TextDocument, lines: string[]): Promise<void> {
+    private async parseGlobalDirectives(document: vscode.TextDocument, lines: string[], symbolTable: LarkSymbolTable): Promise<void> {
         for (let lineIndex = 0; lineIndex < lines.length; lineIndex++) {
             const line = lines[lineIndex].trim();
 
@@ -90,9 +98,9 @@ export class LarkDocumentAnalyzer {
             const definitionText = fullDefinition.lines.join(' ').trim();
 
             // Process only directives in this phase
-            if (this.parseImportDirective(document, definitionText, lineIndex) ||
-                this.parseDeclareDirective(document, definitionText, lineIndex) ||
-                this.parseIgnoreDirective(document, definitionText, lineIndex)) {
+            if (this.parseImportDirective(document, definitionText, lineIndex, symbolTable) ||
+                this.parseDeclareDirective(document, definitionText, lineIndex, symbolTable) ||
+                this.parseIgnoreDirective(document, definitionText, lineIndex, symbolTable)) {
                 // Skip the lines we've already processed
                 lineIndex = fullDefinition.endLine;
             }
@@ -102,7 +110,7 @@ export class LarkDocumentAnalyzer {
     /**
      * Second phase: Parse symbol definitions (terminals, rules, parameterized rules)
      */
-    private async parseSymbolDefinitions(document: vscode.TextDocument, lines: string[]): Promise<void> {
+    private async parseSymbolDefinitions(document: vscode.TextDocument, lines: string[], symbolTable: LarkSymbolTable): Promise<void> {
         for (let lineIndex = 0; lineIndex < lines.length; lineIndex++) {
             const line = lines[lineIndex].trim();
 
@@ -116,9 +124,9 @@ export class LarkDocumentAnalyzer {
             const definitionText = fullDefinition.lines.join(' ').trim();
 
             // Process only symbol definitions in this phase
-            if (this.parseParameterizedRuleDefinition(document, definitionText, lineIndex, fullDefinition.endLine) ||
-                this.parseRuleDefinition(document, definitionText, lineIndex, fullDefinition.endLine) ||
-                this.parseTerminalDefinition(document, definitionText, lineIndex, fullDefinition.endLine)) {
+            if (this.parseParameterizedRuleDefinition(document, definitionText, lineIndex, fullDefinition.endLine, symbolTable) ||
+                this.parseRuleDefinition(document, definitionText, lineIndex, fullDefinition.endLine, symbolTable) ||
+                this.parseTerminalDefinition(document, definitionText, lineIndex, fullDefinition.endLine, symbolTable)) {
                 // Skip the lines we've already processed
                 lineIndex = fullDefinition.endLine;
             }
@@ -128,15 +136,15 @@ export class LarkDocumentAnalyzer {
     /**
      * Third phase: Build scope hierarchy and link scope chains
      */
-    private async buildScopeHierarchy(document: vscode.TextDocument, lines: string[]): Promise<void> {
+    private async buildScopeHierarchy(document: vscode.TextDocument, lines: string[], symbolTable: LarkSymbolTable): Promise<void> {
         // Create global scope (already handled by clearDocument, but ensure it's proper)
-        this.createGlobalScope(document);
+        this.createGlobalScope(document, symbolTable);
 
         // Create rule scopes for parameterized rules
-        await this.createRuleScopes(document);
+        await this.createRuleScopes(document, symbolTable);
 
         // Link scope chain (establish parent-child relationships)
-        this.linkScopeChain();
+        this.linkScopeChain(symbolTable);
     }
 
     /**
@@ -196,39 +204,39 @@ export class LarkDocumentAnalyzer {
     /**
      * Processes a single definition (rule, terminal, or import)
      */
-    private async processDefinition(document: vscode.TextDocument, definitionText: string, startLine: number, endLine: number): Promise<void> {
+    private async processDefinition(document: vscode.TextDocument, definitionText: string, startLine: number, endLine: number, symbolTable: LarkSymbolTable): Promise<void> {
         // Remove comments from definition
         const cleanDefinition = this.removeComments(definitionText);
 
         // Try to match different types of definitions
-        if (this.tryProcessImport(document, cleanDefinition, startLine)) {
+        if (this.tryProcessImport(document, cleanDefinition, startLine, symbolTable)) {
             return;
         }
 
-        if (this.tryProcessDeclare(document, cleanDefinition, startLine)) {
+        if (this.tryProcessDeclare(document, cleanDefinition, startLine, symbolTable)) {
             return;
         }
 
-        if (this.tryProcessParameterizedRule(document, cleanDefinition, startLine, endLine)) {
+        if (this.tryProcessParameterizedRule(document, cleanDefinition, startLine, endLine, symbolTable)) {
             return;
         }
 
-        if (this.tryProcessRule(document, cleanDefinition, startLine, endLine)) {
+        if (this.tryProcessRule(document, cleanDefinition, startLine, endLine, symbolTable)) {
             return;
         }
 
-        if (this.tryProcessTerminal(document, cleanDefinition, startLine, endLine)) {
+        if (this.tryProcessTerminal(document, cleanDefinition, startLine, endLine, symbolTable)) {
             return;
         }
 
         // If we can't identify the definition type, it might be a directive or other construct
-        this.tryProcessDirective(document, cleanDefinition, startLine);
+        this.tryProcessDirective(document, cleanDefinition, startLine, symbolTable);
     }
 
     /**
      * Tries to process an import statement
      */
-    private tryProcessImport(document: vscode.TextDocument, definition: string, lineIndex: number): boolean {
+    private tryProcessImport(document: vscode.TextDocument, definition: string, lineIndex: number, symbolTable: LarkSymbolTable): boolean {
         // Try single symbol import first
         let match = definition.match(LarkDocumentAnalyzer.PATTERNS.IMPORT_STATEMENT_SINGLE);
         if (match) {
@@ -238,7 +246,7 @@ export class LarkDocumentAnalyzer {
             const range = new vscode.Range(lineIndex, 0, lineIndex, definition.length);
             const location: SymbolLocation = {
                 range,
-                document: document.uri
+                uri: document.uri
             };
 
             const entry: SymbolTableEntry = {
@@ -246,13 +254,13 @@ export class LarkDocumentAnalyzer {
                 type: 'imported',
                 definition: location,
                 usages: [],
-                scope: this.symbolTable.getGlobalScope(),
+                scope: symbolTable.getGlobalScope(),
                 isUsed: false,
                 importSource: moduleName,
                 originalName: symbolName
             };
 
-            this.symbolTable.addSymbol(entry);
+            symbolTable.addSymbol(entry);
             return true;
         }
 
@@ -265,7 +273,7 @@ export class LarkDocumentAnalyzer {
             const range = new vscode.Range(lineIndex, 0, lineIndex, definition.length);
             const location: SymbolLocation = {
                 range,
-                document: document.uri
+                uri: document.uri
             };
 
             // Add each imported symbol to the symbol table
@@ -275,13 +283,13 @@ export class LarkDocumentAnalyzer {
                     type: 'imported',
                     definition: location,
                     usages: [],
-                    scope: this.symbolTable.getGlobalScope(),
+                    scope: symbolTable.getGlobalScope(),
                     isUsed: false,
                     importSource: moduleName,
                     originalName: symbol.name
                 };
 
-                this.symbolTable.addSymbol(entry);
+                symbolTable.addSymbol(entry);
             }
             return true;
         }
@@ -292,7 +300,7 @@ export class LarkDocumentAnalyzer {
     /**
      * Tries to process a declare directive
      */
-    private tryProcessDeclare(document: vscode.TextDocument, definition: string, lineIndex: number): boolean {
+    private tryProcessDeclare(document: vscode.TextDocument, definition: string, lineIndex: number, symbolTable: LarkSymbolTable): boolean {
         const match = definition.match(LarkDocumentAnalyzer.PATTERNS.DECLARE_DIRECTIVE);
         if (!match) {
             return false;
@@ -304,7 +312,7 @@ export class LarkDocumentAnalyzer {
         const range = new vscode.Range(lineIndex, 0, lineIndex, definition.length);
         const location: SymbolLocation = {
             range,
-            document: document.uri
+            uri: document.uri
         };
 
         // Add each declared terminal to the symbol table
@@ -316,12 +324,12 @@ export class LarkDocumentAnalyzer {
                     type: 'terminal',
                     definition: location,
                     usages: [],
-                    scope: this.symbolTable.getGlobalScope(),
+                    scope: symbolTable.getGlobalScope(),
                     isUsed: false,
                     isDeclared: true // Mark as declared vs defined
                 };
 
-                this.symbolTable.addSymbol(entry);
+                symbolTable.addSymbol(entry);
             }
         }
 
@@ -331,7 +339,7 @@ export class LarkDocumentAnalyzer {
     /**
      * Tries to process a parameterized rule definition
      */
-    private tryProcessParameterizedRule(document: vscode.TextDocument, definition: string, startLine: number, endLine: number): boolean {
+    private tryProcessParameterizedRule(document: vscode.TextDocument, definition: string, startLine: number, endLine: number, symbolTable: LarkSymbolTable): boolean {
         const match = definition.match(LarkDocumentAnalyzer.PATTERNS.PARAMETERIZED_RULE);
         if (!match) {
             return false;
@@ -343,7 +351,7 @@ export class LarkDocumentAnalyzer {
         const range = new vscode.Range(startLine, 0, endLine, definition.length);
         const location: SymbolLocation = {
             range,
-            document: document.uri
+            uri: document.uri
         };
 
         const entry: SymbolTableEntry = {
@@ -351,17 +359,17 @@ export class LarkDocumentAnalyzer {
             type: 'rule',
             definition: location,
             usages: [],
-            scope: this.symbolTable.getGlobalScope(),
+            scope: symbolTable.getGlobalScope(),
             isUsed: false,
             isParameterized: true,
             baseRuleName: ruleName,
             parameters
         };
 
-        this.symbolTable.addSymbol(entry);
+        symbolTable.addSymbol(entry);
 
         // Create a rule scope for this parameterized rule
-        const ruleScope = this.symbolTable.createRuleScope(ruleName, range);
+        const ruleScope = symbolTable.createRuleScope(ruleName, range);
 
         // Add parameters as symbols in the rule scope
         for (const param of parameters) {
@@ -370,13 +378,13 @@ export class LarkDocumentAnalyzer {
                 type: 'parameter',
                 definition: {
                     range: param.range,
-                    document: document.uri
+                    uri: document.uri
                 },
                 usages: [],
                 scope: ruleScope,
                 isUsed: false
             };
-            this.symbolTable.addSymbol(paramEntry);
+            symbolTable.addSymbol(paramEntry);
         }
 
         return true;
@@ -385,7 +393,7 @@ export class LarkDocumentAnalyzer {
     /**
      * Tries to process a regular rule definition
      */
-    private tryProcessRule(document: vscode.TextDocument, definition: string, startLine: number, endLine: number): boolean {
+    private tryProcessRule(document: vscode.TextDocument, definition: string, startLine: number, endLine: number, symbolTable: LarkSymbolTable): boolean {
         const match = definition.match(LarkDocumentAnalyzer.PATTERNS.RULE_DEFINITION);
         if (!match) {
             return false;
@@ -396,7 +404,7 @@ export class LarkDocumentAnalyzer {
         const range = new vscode.Range(startLine, 0, endLine, definition.length);
         const location: SymbolLocation = {
             range,
-            document: document.uri
+            uri: document.uri
         };
 
         const entry: SymbolTableEntry = {
@@ -404,15 +412,15 @@ export class LarkDocumentAnalyzer {
             type: 'rule',
             definition: location,
             usages: [],
-            scope: this.symbolTable.getGlobalScope(),
+            scope: symbolTable.getGlobalScope(),
             isUsed: false,
             isParameterized: false
         };
 
-        this.symbolTable.addSymbol(entry);
+        symbolTable.addSymbol(entry);
 
         // Create a rule scope
-        this.symbolTable.createRuleScope(ruleName, range);
+        symbolTable.createRuleScope(ruleName, range);
 
         return true;
     }
@@ -420,7 +428,7 @@ export class LarkDocumentAnalyzer {
     /**
      * Tries to process a terminal definition
      */
-    private tryProcessTerminal(document: vscode.TextDocument, definition: string, startLine: number, endLine: number): boolean {
+    private tryProcessTerminal(document: vscode.TextDocument, definition: string, startLine: number, endLine: number, symbolTable: LarkSymbolTable): boolean {
         const match = definition.match(LarkDocumentAnalyzer.PATTERNS.TERMINAL_DEFINITION);
         if (!match) {
             return false;
@@ -431,7 +439,7 @@ export class LarkDocumentAnalyzer {
         const range = new vscode.Range(startLine, 0, endLine, definition.length);
         const location: SymbolLocation = {
             range,
-            document: document.uri
+            uri: document.uri
         };
 
         const entry: SymbolTableEntry = {
@@ -439,18 +447,18 @@ export class LarkDocumentAnalyzer {
             type: 'terminal',
             definition: location,
             usages: [],
-            scope: this.symbolTable.getGlobalScope(),
+            scope: symbolTable.getGlobalScope(),
             isUsed: false
         };
 
-        this.symbolTable.addSymbol(entry);
+        symbolTable.addSymbol(entry);
         return true;
     }
 
     /**
      * Tries to process a directive
      */
-    private tryProcessDirective(document: vscode.TextDocument, definition: string, lineIndex: number): boolean {
+    private tryProcessDirective(document: vscode.TextDocument, definition: string, lineIndex: number, symbolTable: LarkSymbolTable): boolean {
         if (!definition.match(LarkDocumentAnalyzer.PATTERNS.DIRECTIVE)) {
             return false;
         }
@@ -509,7 +517,7 @@ export class LarkDocumentAnalyzer {
     /**
      * Second pass: collect symbol references and validate usage
      */
-    private async collectReferences(document: vscode.TextDocument, lines: string[]): Promise<void> {
+    private async collectReferences(document: vscode.TextDocument, lines: string[], symbolTable: LarkSymbolTable): Promise<void> {
         for (let lineIndex = 0; lineIndex < lines.length; lineIndex++) {
             const line = lines[lineIndex];
 
@@ -519,28 +527,28 @@ export class LarkDocumentAnalyzer {
             }
 
             // Process references in this line
-            await this.processReferencesInLine(document, line, lineIndex);
+            await this.processReferencesInLine(document, line, lineIndex, symbolTable);
         }
     }
 
     /**
      * Processes symbol references in a single line
      */
-    private async processReferencesInLine(document: vscode.TextDocument, line: string, lineIndex: number): Promise<void> {
+    private async processReferencesInLine(document: vscode.TextDocument, line: string, lineIndex: number, symbolTable: LarkSymbolTable): Promise<void> {
         // Remove comments from line
         const cleanLine = this.removeComments(line);
 
         // First, handle parameterized rule calls
-        this.processParameterizedCalls(document, cleanLine, lineIndex);
+        this.processParameterizedCalls(document, cleanLine, lineIndex, symbolTable);
 
         // Then handle regular symbol references
-        this.processSymbolReferences(document, cleanLine, lineIndex);
+        this.processSymbolReferences(document, cleanLine, lineIndex, symbolTable);
     }
 
     /**
      * Processes parameterized rule calls
      */
-    private processParameterizedCalls(document: vscode.TextDocument, line: string, lineIndex: number): void {
+    private processParameterizedCalls(document: vscode.TextDocument, line: string, lineIndex: number, symbolTable: LarkSymbolTable): void {
         const matches = Array.from(line.matchAll(LarkDocumentAnalyzer.PATTERNS.PARAMETERIZED_CALL));
 
         for (const match of matches) {
@@ -551,13 +559,13 @@ export class LarkDocumentAnalyzer {
             const range = new vscode.Range(lineIndex, startCol, lineIndex, endCol);
             const location: SymbolLocation = {
                 range,
-                document: document.uri
+                uri: document.uri
             };
 
             // Mark the parameterized rule as used
-            const symbol = this.symbolTable.resolveSymbol(ruleName);
+            const symbol = symbolTable.resolveSymbol(ruleName);
             if (symbol && symbol.isParameterized) {
-                this.symbolTable.markSymbolAsUsed(ruleName, location);
+                symbolTable.markSymbolAsUsed(ruleName, location);
             }
         }
     }
@@ -565,7 +573,7 @@ export class LarkDocumentAnalyzer {
     /**
      * Processes regular symbol references
      */
-    private processSymbolReferences(document: vscode.TextDocument, line: string, lineIndex: number): void {
+    private processSymbolReferences(document: vscode.TextDocument, line: string, lineIndex: number, symbolTable: LarkSymbolTable): void {
         // Skip lines that are definitions (contain colon before any symbol references)
         const colonIndex = line.indexOf(':');
         if (colonIndex === -1) {
@@ -593,13 +601,13 @@ export class LarkDocumentAnalyzer {
             const range = new vscode.Range(lineIndex, startCol, lineIndex, endCol);
             const location: SymbolLocation = {
                 range,
-                document: document.uri
+                uri: document.uri
             };
 
             // Try to resolve and mark as used
-            const symbol = this.symbolTable.resolveSymbol(symbolName);
+            const symbol = symbolTable.resolveSymbol(symbolName);
             if (symbol) {
-                this.symbolTable.markSymbolAsUsed(symbolName, location);
+                symbolTable.markSymbolAsUsed(symbolName, location);
             }
         }
     }
@@ -649,34 +657,30 @@ export class LarkDocumentAnalyzer {
         await this.analyzeDocument(document);
     }
 
-    // =======================================================================
-    // PLANNED ARCHITECTURE METHODS (mapped to existing implementations)
-    // =======================================================================
-
     /**
      * Parse import directive - maps to tryProcessImport
      */
-    private parseImportDirective(document: vscode.TextDocument, definition: string, lineIndex: number): boolean {
+    private parseImportDirective(document: vscode.TextDocument, definition: string, lineIndex: number, symbolTable: LarkSymbolTable): boolean {
         const cleanDefinition = this.removeComments(definition);
-        return this.tryProcessImport(document, cleanDefinition, lineIndex);
+        return this.tryProcessImport(document, cleanDefinition, lineIndex, symbolTable);
     }
 
     /**
      * Parse declare directive - maps to tryProcessDeclare
      */
-    private parseDeclareDirective(document: vscode.TextDocument, definition: string, lineIndex: number): boolean {
+    private parseDeclareDirective(document: vscode.TextDocument, definition: string, lineIndex: number, symbolTable: LarkSymbolTable): boolean {
         const cleanDefinition = this.removeComments(definition);
-        return this.tryProcessDeclare(document, cleanDefinition, lineIndex);
+        return this.tryProcessDeclare(document, cleanDefinition, lineIndex, symbolTable);
     }
 
     /**
      * Parse ignore directive - maps to tryProcessDirective (partial)
      */
-    private parseIgnoreDirective(document: vscode.TextDocument, definition: string, lineIndex: number): boolean {
+    private parseIgnoreDirective(document: vscode.TextDocument, definition: string, lineIndex: number, symbolTable: LarkSymbolTable): boolean {
         const cleanDefinition = this.removeComments(definition);
         // Only process if it's an ignore directive
         if (cleanDefinition.startsWith('%ignore')) {
-            this.tryProcessDirective(document, cleanDefinition, lineIndex);
+            this.tryProcessDirective(document, cleanDefinition, lineIndex, symbolTable);
             return true;
         }
         return false;
@@ -685,40 +689,40 @@ export class LarkDocumentAnalyzer {
     /**
      * Parse terminal definition - maps to tryProcessTerminal
      */
-    private parseTerminalDefinition(document: vscode.TextDocument, definition: string, startLine: number, endLine: number): boolean {
+    private parseTerminalDefinition(document: vscode.TextDocument, definition: string, startLine: number, endLine: number, symbolTable: LarkSymbolTable): boolean {
         const cleanDefinition = this.removeComments(definition);
-        return this.tryProcessTerminal(document, cleanDefinition, startLine, endLine);
+        return this.tryProcessTerminal(document, cleanDefinition, startLine, endLine, symbolTable);
     }
 
     /**
      * Parse rule definition - maps to tryProcessRule
      */
-    private parseRuleDefinition(document: vscode.TextDocument, definition: string, startLine: number, endLine: number): boolean {
+    private parseRuleDefinition(document: vscode.TextDocument, definition: string, startLine: number, endLine: number, symbolTable: LarkSymbolTable): boolean {
         const cleanDefinition = this.removeComments(definition);
-        return this.tryProcessRule(document, cleanDefinition, startLine, endLine);
+        return this.tryProcessRule(document, cleanDefinition, startLine, endLine, symbolTable);
     }
 
     /**
      * Parse parameterized rule definition - maps to tryProcessParameterizedRule
      */
-    private parseParameterizedRuleDefinition(document: vscode.TextDocument, definition: string, startLine: number, endLine: number): boolean {
+    private parseParameterizedRuleDefinition(document: vscode.TextDocument, definition: string, startLine: number, endLine: number, symbolTable: LarkSymbolTable): boolean {
         const cleanDefinition = this.removeComments(definition);
-        return this.tryProcessParameterizedRule(document, cleanDefinition, startLine, endLine);
+        return this.tryProcessParameterizedRule(document, cleanDefinition, startLine, endLine, symbolTable);
     }
 
     /**
      * Create global scope (already handled by clearDocument, but ensure it's proper)
      */
-    private createGlobalScope(document: vscode.TextDocument): void {
+    private createGlobalScope(document: vscode.TextDocument, symbolTable: LarkSymbolTable): void {
         // Global scope is already created by clearDocument, but we can ensure it's properly initialized
-        const globalScope = this.symbolTable.getGlobalScope();
+        const globalScope = symbolTable.getGlobalScope();
         // Global scope is properly managed by the symbol table
     }
 
     /**
      * Create rule scopes for parameterized rules
      */
-    private async createRuleScopes(document: vscode.TextDocument): Promise<void> {
+    private async createRuleScopes(document: vscode.TextDocument, symbolTable: LarkSymbolTable): Promise<void> {
         // Rule scopes are created automatically when parameterized rules are processed
         // in parseParameterizedRuleDefinition -> tryProcessParameterizedRule
         // This method ensures all parameterized rules have their scopes properly set up
@@ -727,7 +731,7 @@ export class LarkDocumentAnalyzer {
     /**
      * Link scope chain (establish parent-child relationships)
      */
-    private linkScopeChain(): void {
+    private linkScopeChain(symbolTable: LarkSymbolTable): void {
         // Scope chains are established automatically when scopes are created
         // All rule scopes have the global scope as their parent
         // This method ensures the scope hierarchy is properly linked
@@ -744,14 +748,12 @@ export class LarkDocumentAnalyzer {
         // TODO: Implement partial rebuilding
     }
 
-    // STEP 6: INCREMENTAL UPDATES IMPLEMENTATION
-    // =========================================
-
     /**
      * Main entry point for planned architecture - updates symbol table from document
      */
     public async updateFromDocument(document: vscode.TextDocument): Promise<void> {
-        await this.analyzeDocument(document);
+        // This method is now deprecated. Use analyze() instead.
+        // await this.analyzeDocument(document);
     }
 
     /**
@@ -770,31 +772,11 @@ export class LarkDocumentAnalyzer {
      * Update symbol table incrementally based on document changes
      */
     public async updateIncremental(document: vscode.TextDocument, changes: vscode.TextDocumentContentChangeEvent[]): Promise<void> {
-        // Set document context for incremental update
-        this.symbolTable.setDocumentContext(document.uri, document.version);
-
-        try {
-            // Step 1: Document change detection
-            const affectedScopes = this.detectAffectedScopes(changes, document);
-
-            if (affectedScopes.length === 0) {
-                // No scopes affected, just update references if needed
-                await this.updateReferencesOnly(document, changes);
-                return;
-            }
-
-            // Step 2: Scope invalidation logic
-            for (const scope of affectedScopes) {
-                this.invalidateScope(scope);
-            }
-
-            // Step 3: Performance optimization - partial rebuild
-            await this.rebuildAffectedScopes(document, affectedScopes);
-
-        } catch (error) {
-            console.warn('Incremental update failed, falling back to full analysis:', error);
-            await this.analyzeDocument(document);
-        }
+        // Incremental updates are complex and not yet implemented in the new stateless architecture.
+        // This method will need to be redesigned to work with a new symbol table instance.
+        // For now, we will fall back to a full analysis.
+        console.warn('Incremental update called, but not yet implemented in stateless analyzer. Falling back to full analysis.');
+        await this.analyze(document);
     }
 
     /**
@@ -836,80 +818,31 @@ export class LarkDocumentAnalyzer {
      * 1. Document change detection - detect which scopes are affected by changes
      */
     private detectAffectedScopes(changes: vscode.TextDocumentContentChangeEvent[], document: vscode.TextDocument): LarkScope[] {
-        const affectedScopes = new Set<LarkScope>();
-
-        for (const change of changes) {
-            if (!change.range) {
-                // Full document change - all scopes affected
-                return this.getAllScopes();
-            }
-
-            // Find scopes that contain the change range
-            const scopesInRange = this.getScopesInRange(change.range, document);
-            scopesInRange.forEach(scope => affectedScopes.add(scope));
-
-            // Check if change affects scope boundaries
-            const lineBoundaryScopes = this.getScopesBoundingLines(change.range, document);
-            lineBoundaryScopes.forEach(scope => affectedScopes.add(scope));
-        }
-
-        return Array.from(affectedScopes);
+        // This method is part of the old incremental update logic and needs to be adapted.
+        // For now, it will return an empty array.
+        return [];
     }
 
     /**
      * 2. Scope invalidation logic - invalidate affected scopes
      */
     private invalidateScope(scope: LarkScope): void {
-        // Clear symbols in this scope
-        this.symbolTable.clearScope(scope);
-
-        // Mark scope as needing rebuild
-        scope.needsRebuild = true;
-
-        // Invalidate dependent scopes (scopes that reference symbols from this scope)
-        const dependentScopes = this.findDependentScopes(scope);
-        for (const dependentScope of dependentScopes) {
-            if (!dependentScope.needsRebuild) {
-                this.invalidateScope(dependentScope);
-            }
-        }
+        // This method is part of the old incremental update logic and is no longer valid
+        // in a stateless analyzer. It is kept as a placeholder for future reimplementation.
     }
 
     /**
      * 3. Performance optimization - rebuild only affected scopes
      */
     private async rebuildAffectedScopes(document: vscode.TextDocument, affectedScopes: LarkScope[]): Promise<void> {
-        const lines = document.getText().split('\n');
-
-        // Sort scopes by dependency order (global first, then rules)
-        const sortedScopes = this.sortScopesByDependency(affectedScopes);
-
-        for (const scope of sortedScopes) {
-            await this.rebuildScope(scope, document, lines);
-        }
-
-        // Update cross-references between rebuilt scopes
-        this.updateCrossReferences(sortedScopes);
+        // This method is part of the old incremental update logic and needs to be adapted.
     }
 
     /**
      * Performance optimization - update only references without scope changes
      */
     private async updateReferencesOnly(document: vscode.TextDocument, changes: vscode.TextDocumentContentChangeEvent[]): Promise<void> {
-        const lines = document.getText().split('\n');
-
-        for (const change of changes) {
-            if (!change.range) {
-                continue;
-            }
-
-            // Update references only in changed lines
-            for (let lineIndex = change.range.start.line; lineIndex <= change.range.end.line; lineIndex++) {
-                if (lineIndex < lines.length) {
-                    await this.processReferencesInLine(document, lines[lineIndex], lineIndex);
-                }
-            }
-        }
+        // This method is part of the old incremental update logic and needs to be adapted.
     }
 
     // HELPER METHODS FOR INCREMENTAL UPDATES
@@ -928,102 +861,37 @@ export class LarkDocumentAnalyzer {
     }
 
     private getAllScopes(): LarkScope[] {
-        // Get all scopes from symbol table
-        return this.symbolTable.getAllScopes();
+        // This method is part of the old incremental update logic and needs to be adapted.
+        // It requires a symbol table instance, which is no longer stored in the analyzer.
+        return [];
     }
 
     private getScopesInRange(range: vscode.Range, document: vscode.TextDocument): LarkScope[] {
-        // Find scopes that contain the given range
-        return this.symbolTable.getScopesContaining(range);
+        // This method is part of the old incremental update logic and needs to be adapted.
+        return [];
     }
 
     private getScopesBoundingLines(range: vscode.Range, document: vscode.TextDocument): LarkScope[] {
-        // Find scopes whose boundaries might be affected by the change
-        const scopes: LarkScope[] = [];
-
-        // Check if change is near scope boundaries (within 2 lines)
-        const allScopes = this.getAllScopes();
-        for (const scope of allScopes) {
-            if (this.isRangeNearScopeBoundary(range, scope)) {
-                scopes.push(scope);
-            }
-        }
-
-        return scopes;
+        // This method is part of the old incremental update logic and needs to be adapted.
+        return [];
     }
 
     private isRangeNearScopeBoundary(range: vscode.Range, scope: LarkScope): boolean {
-        const startLine = range.start.line;
-        const endLine = range.end.line;
-        const scopeStart = scope.range.start.line;
-        const scopeEnd = scope.range.end.line;
-
-        // Check if change is within 2 lines of scope boundaries
-        return (Math.abs(startLine - scopeStart) <= 2) ||
-            (Math.abs(endLine - scopeEnd) <= 2) ||
-            (startLine >= scopeStart - 2 && endLine <= scopeEnd + 2);
+        // This method is part of the old incremental update logic and needs to be adapted.
+        return false;
     }
 
     private findDependentScopes(scope: LarkScope): LarkScope[] {
-        // Find scopes that reference symbols from this scope
-        // For now, return empty array - full implementation would check symbol references
+        // This method is part of the old incremental update logic and needs to be adapted.
         return [];
     }
 
     private sortScopesByDependency(scopes: LarkScope[]): LarkScope[] {
-        // Sort scopes to ensure dependencies are rebuilt first
-        return scopes.sort((a, b) => {
-            // Global scope first, then by scope hierarchy
-            if (a.type === 'global' && b.type !== 'global') {
-                return -1;
-            }
-            if (b.type === 'global' && a.type !== 'global') {
-                return 1;
-            }
-
-            // Then by line number (earlier scopes first)
-            return a.range.start.line - b.range.start.line;
-        });
+        // This method is part of the old incremental update logic and needs to be adapted.
+        return scopes;
     }
 
     private async rebuildScope(scope: LarkScope, document: vscode.TextDocument, lines: string[]): Promise<void> {
-        // Rebuild only the symbols within this scope
-        const startLine = scope.range.start.line;
-        const endLine = scope.range.end.line;
-
-        for (let lineIndex = startLine; lineIndex <= endLine && lineIndex < lines.length; lineIndex++) {
-            const line = lines[lineIndex].trim();
-
-            if (!line || this.isComment(line)) {
-                continue;
-            }
-
-            // Process definitions within this scope
-            const fullDefinition = this.collectMultiLineDefinition(lines, lineIndex);
-            const definitionText = fullDefinition.lines.join(' ').trim();
-
-            if (scope.type === 'global') {
-                // Global scope: process directives and top-level definitions
-                if (this.parseImportDirective(document, definitionText, lineIndex) ||
-                    this.parseDeclareDirective(document, definitionText, lineIndex) ||
-                    this.parseParameterizedRuleDefinition(document, definitionText, lineIndex, fullDefinition.endLine) ||
-                    this.parseRuleDefinition(document, definitionText, lineIndex, fullDefinition.endLine) ||
-                    this.parseTerminalDefinition(document, definitionText, lineIndex, fullDefinition.endLine)) {
-                    lineIndex = fullDefinition.endLine;
-                }
-            } else if (scope.type === 'rule') {
-                // Rule scope: process parameter definitions and local symbols
-                await this.processReferencesInLine(document, line, lineIndex);
-            }
-        }
-
-        // Mark scope as rebuilt
-        scope.needsRebuild = false;
-    }
-
-    private updateCrossReferences(scopes: LarkScope[]): void {
-        // Update cross-references between rebuilt scopes
-        // For now, this is a placeholder - full implementation would update
-        // symbol references that cross scope boundaries
+        // This method is part of the old incremental update logic and needs to be adapted.
     }
 }

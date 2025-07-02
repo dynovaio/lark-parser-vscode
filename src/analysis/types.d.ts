@@ -32,7 +32,7 @@ export interface ParameterInfo {
  */
 export interface SymbolLocation {
     range: vscode.Range;
-    document: vscode.Uri;
+    uri: vscode.Uri;
 }
 
 /**
