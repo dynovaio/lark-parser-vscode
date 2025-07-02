@@ -367,4 +367,59 @@ export class LarkSymbolTable {
             entry.definition.range
         );
     }
+
+    // INCREMENTAL UPDATE METHODS
+    // ==========================
+
+    /**
+     * Clear all symbols in a specific scope
+     */
+    clearScope(scope: LarkScope): void {
+        scope.symbols.clear();
+        if (scope.parameters) {
+            scope.parameters.clear();
+        }
+    }
+
+    /**
+     * Get all scopes in the symbol table
+     */
+    getAllScopes(): LarkScope[] {
+        const allScopes = [this.globalScope];
+        for (const scope of this.scopes.values()) {
+            allScopes.push(scope);
+        }
+        return allScopes;
+    }
+
+    /**
+     * Get scopes that contain the given range
+     */
+    getScopesContaining(range: vscode.Range): LarkScope[] {
+        const containingScopes: LarkScope[] = [];
+
+        // Check global scope
+        if (this.rangeContains(this.globalScope.range, range)) {
+            containingScopes.push(this.globalScope);
+        }
+
+        // Check rule scopes
+        for (const scope of this.scopes.values()) {
+            if (this.rangeContains(scope.range, range)) {
+                containingScopes.push(scope);
+            }
+        }
+
+        return containingScopes;
+    }
+
+    /**
+     * Check if one range contains another
+     */
+    private rangeContains(container: vscode.Range, contained: vscode.Range): boolean {
+        return container.start.line <= contained.start.line &&
+            container.end.line >= contained.end.line &&
+            (container.start.line < contained.start.line || container.start.character <= contained.start.character) &&
+            (container.end.line > contained.end.line || container.end.character >= contained.end.character);
+    }
 }

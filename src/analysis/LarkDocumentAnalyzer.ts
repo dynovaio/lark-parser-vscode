@@ -738,33 +738,292 @@ export class LarkDocumentAnalyzer {
     // =======================================================================
 
     /**
-     * Update symbol table from text change (future implementation)
-     */
-    public async updateFromTextChange(document: vscode.TextDocument, change: vscode.TextDocumentContentChangeEvent): Promise<void> {
-        // For now, just re-analyze the entire document
-        // TODO: Implement incremental analysis based on change location
-        await this.analyzeDocument(document);
-    }
-
-    /**
-     * Detect which scopes are affected by a text change (future implementation)
-     */
-    private detectAffectedScopes(change: vscode.TextDocumentContentChangeEvent): LarkScope[] {
-        // TODO: Implement scope detection based on change range
-        return [];
-    }
-
-    /**
-     * Invalidate a specific scope (future implementation)
-     */
-    private invalidateScope(scope: LarkScope): void {
-        // TODO: Implement scope invalidation
-    }
-
-    /**
      * Rebuild only the affected scopes (future implementation)
      */
     private async rebuildPartial(document: vscode.TextDocument, affectedScopes: LarkScope[]): Promise<void> {
         // TODO: Implement partial rebuilding
+    }
+
+    // STEP 6: INCREMENTAL UPDATES IMPLEMENTATION
+    // =========================================
+
+    /**
+     * Main entry point for planned architecture - updates symbol table from document
+     */
+    public async updateFromDocument(document: vscode.TextDocument): Promise<void> {
+        await this.analyzeDocument(document);
+    }
+
+    /**
+     * Handle incremental document updates for performance optimization
+     */
+    public async updateFromTextChange(change: vscode.TextDocumentContentChangeEvent, document: vscode.TextDocument): Promise<void> {
+        if (this.canUpdateIncremental(change, document)) {
+            await this.updateIncremental(document, [change]);
+        } else {
+            // Fall back to full analysis for complex changes
+            await this.analyzeDocument(document);
+        }
+    }
+
+    /**
+     * Update symbol table incrementally based on document changes
+     */
+    public async updateIncremental(document: vscode.TextDocument, changes: vscode.TextDocumentContentChangeEvent[]): Promise<void> {
+        // Set document context for incremental update
+        this.symbolTable.setDocumentContext(document.uri, document.version);
+
+        try {
+            // Step 1: Document change detection
+            const affectedScopes = this.detectAffectedScopes(changes, document);
+
+            if (affectedScopes.length === 0) {
+                // No scopes affected, just update references if needed
+                await this.updateReferencesOnly(document, changes);
+                return;
+            }
+
+            // Step 2: Scope invalidation logic
+            for (const scope of affectedScopes) {
+                this.invalidateScope(scope);
+            }
+
+            // Step 3: Performance optimization - partial rebuild
+            await this.rebuildAffectedScopes(document, affectedScopes);
+
+        } catch (error) {
+            console.warn('Incremental update failed, falling back to full analysis:', error);
+            await this.analyzeDocument(document);
+        }
+    }
+
+    /**
+     * 1. Document change detection - determine if incremental update is viable
+     */
+    private canUpdateIncremental(change: vscode.TextDocumentContentChangeEvent, document: vscode.TextDocument): boolean {
+        // Single change event analysis
+        return this.canUpdateIncrementalMultiple([change], document);
+    }
+
+    private canUpdateIncrementalMultiple(changes: vscode.TextDocumentContentChangeEvent[], document: vscode.TextDocument): boolean {
+        // Don't attempt incremental for complex scenarios
+        if (changes.length > 5) {
+            return false;
+        }
+
+        for (const change of changes) {
+            // Skip incremental for changes that affect multiple lines
+            if (change.range && change.range.start.line !== change.range.end.line) {
+                return false;
+            }
+
+            // Skip incremental for changes that might affect imports or global directives
+            const lineText = document.lineAt(change.range?.start.line || 0).text;
+            if (this.isGlobalDirectiveLine(lineText)) {
+                return false;
+            }
+
+            // Skip incremental for changes that might affect rule/terminal definitions
+            if (this.isDefinitionLine(lineText) || this.isDefinitionLine(change.text)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * 1. Document change detection - detect which scopes are affected by changes
+     */
+    private detectAffectedScopes(changes: vscode.TextDocumentContentChangeEvent[], document: vscode.TextDocument): LarkScope[] {
+        const affectedScopes = new Set<LarkScope>();
+
+        for (const change of changes) {
+            if (!change.range) {
+                // Full document change - all scopes affected
+                return this.getAllScopes();
+            }
+
+            // Find scopes that contain the change range
+            const scopesInRange = this.getScopesInRange(change.range, document);
+            scopesInRange.forEach(scope => affectedScopes.add(scope));
+
+            // Check if change affects scope boundaries
+            const lineBoundaryScopes = this.getScopesBoundingLines(change.range, document);
+            lineBoundaryScopes.forEach(scope => affectedScopes.add(scope));
+        }
+
+        return Array.from(affectedScopes);
+    }
+
+    /**
+     * 2. Scope invalidation logic - invalidate affected scopes
+     */
+    private invalidateScope(scope: LarkScope): void {
+        // Clear symbols in this scope
+        this.symbolTable.clearScope(scope);
+
+        // Mark scope as needing rebuild
+        scope.needsRebuild = true;
+
+        // Invalidate dependent scopes (scopes that reference symbols from this scope)
+        const dependentScopes = this.findDependentScopes(scope);
+        for (const dependentScope of dependentScopes) {
+            if (!dependentScope.needsRebuild) {
+                this.invalidateScope(dependentScope);
+            }
+        }
+    }
+
+    /**
+     * 3. Performance optimization - rebuild only affected scopes
+     */
+    private async rebuildAffectedScopes(document: vscode.TextDocument, affectedScopes: LarkScope[]): Promise<void> {
+        const lines = document.getText().split('\n');
+
+        // Sort scopes by dependency order (global first, then rules)
+        const sortedScopes = this.sortScopesByDependency(affectedScopes);
+
+        for (const scope of sortedScopes) {
+            await this.rebuildScope(scope, document, lines);
+        }
+
+        // Update cross-references between rebuilt scopes
+        this.updateCrossReferences(sortedScopes);
+    }
+
+    /**
+     * Performance optimization - update only references without scope changes
+     */
+    private async updateReferencesOnly(document: vscode.TextDocument, changes: vscode.TextDocumentContentChangeEvent[]): Promise<void> {
+        const lines = document.getText().split('\n');
+
+        for (const change of changes) {
+            if (!change.range) {
+                continue;
+            }
+
+            // Update references only in changed lines
+            for (let lineIndex = change.range.start.line; lineIndex <= change.range.end.line; lineIndex++) {
+                if (lineIndex < lines.length) {
+                    await this.processReferencesInLine(document, lines[lineIndex], lineIndex);
+                }
+            }
+        }
+    }
+
+    // HELPER METHODS FOR INCREMENTAL UPDATES
+    // ======================================
+
+    private isGlobalDirectiveLine(line: string): boolean {
+        const trimmed = line.trim();
+        return /^%(import|declare|ignore|override|extend)\b/.test(trimmed);
+    }
+
+    private isDefinitionLine(text: string): boolean {
+        const trimmed = text.trim();
+        return LarkDocumentAnalyzer.PATTERNS.RULE_DEFINITION.test(trimmed) ||
+            LarkDocumentAnalyzer.PATTERNS.TERMINAL_DEFINITION.test(trimmed) ||
+            LarkDocumentAnalyzer.PATTERNS.PARAMETERIZED_RULE.test(trimmed);
+    }
+
+    private getAllScopes(): LarkScope[] {
+        // Get all scopes from symbol table
+        return this.symbolTable.getAllScopes();
+    }
+
+    private getScopesInRange(range: vscode.Range, document: vscode.TextDocument): LarkScope[] {
+        // Find scopes that contain the given range
+        return this.symbolTable.getScopesContaining(range);
+    }
+
+    private getScopesBoundingLines(range: vscode.Range, document: vscode.TextDocument): LarkScope[] {
+        // Find scopes whose boundaries might be affected by the change
+        const scopes: LarkScope[] = [];
+
+        // Check if change is near scope boundaries (within 2 lines)
+        const allScopes = this.getAllScopes();
+        for (const scope of allScopes) {
+            if (this.isRangeNearScopeBoundary(range, scope)) {
+                scopes.push(scope);
+            }
+        }
+
+        return scopes;
+    }
+
+    private isRangeNearScopeBoundary(range: vscode.Range, scope: LarkScope): boolean {
+        const startLine = range.start.line;
+        const endLine = range.end.line;
+        const scopeStart = scope.range.start.line;
+        const scopeEnd = scope.range.end.line;
+
+        // Check if change is within 2 lines of scope boundaries
+        return (Math.abs(startLine - scopeStart) <= 2) ||
+            (Math.abs(endLine - scopeEnd) <= 2) ||
+            (startLine >= scopeStart - 2 && endLine <= scopeEnd + 2);
+    }
+
+    private findDependentScopes(scope: LarkScope): LarkScope[] {
+        // Find scopes that reference symbols from this scope
+        // For now, return empty array - full implementation would check symbol references
+        return [];
+    }
+
+    private sortScopesByDependency(scopes: LarkScope[]): LarkScope[] {
+        // Sort scopes to ensure dependencies are rebuilt first
+        return scopes.sort((a, b) => {
+            // Global scope first, then by scope hierarchy
+            if (a.type === 'global' && b.type !== 'global') {
+                return -1;
+            }
+            if (b.type === 'global' && a.type !== 'global') {
+                return 1;
+            }
+
+            // Then by line number (earlier scopes first)
+            return a.range.start.line - b.range.start.line;
+        });
+    }
+
+    private async rebuildScope(scope: LarkScope, document: vscode.TextDocument, lines: string[]): Promise<void> {
+        // Rebuild only the symbols within this scope
+        const startLine = scope.range.start.line;
+        const endLine = scope.range.end.line;
+
+        for (let lineIndex = startLine; lineIndex <= endLine && lineIndex < lines.length; lineIndex++) {
+            const line = lines[lineIndex].trim();
+
+            if (!line || this.isComment(line)) {
+                continue;
+            }
+
+            // Process definitions within this scope
+            const fullDefinition = this.collectMultiLineDefinition(lines, lineIndex);
+            const definitionText = fullDefinition.lines.join(' ').trim();
+
+            if (scope.type === 'global') {
+                // Global scope: process directives and top-level definitions
+                if (this.parseImportDirective(document, definitionText, lineIndex) ||
+                    this.parseDeclareDirective(document, definitionText, lineIndex) ||
+                    this.parseParameterizedRuleDefinition(document, definitionText, lineIndex, fullDefinition.endLine) ||
+                    this.parseRuleDefinition(document, definitionText, lineIndex, fullDefinition.endLine) ||
+                    this.parseTerminalDefinition(document, definitionText, lineIndex, fullDefinition.endLine)) {
+                    lineIndex = fullDefinition.endLine;
+                }
+            } else if (scope.type === 'rule') {
+                // Rule scope: process parameter definitions and local symbols
+                await this.processReferencesInLine(document, line, lineIndex);
+            }
+        }
+
+        // Mark scope as rebuilt
+        scope.needsRebuild = false;
+    }
+
+    private updateCrossReferences(scopes: LarkScope[]): void {
+        // Update cross-references between rebuilt scopes
+        // For now, this is a placeholder - full implementation would update
+        // symbol references that cross scope boundaries
     }
 }

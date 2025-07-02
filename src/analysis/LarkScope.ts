@@ -7,6 +7,7 @@ import type { Scope, ScopeType, SymbolTableEntry, ParameterInfo } from './types.
 export class LarkScope implements Scope {
     public symbols: Map<string, SymbolTableEntry>;
     public parameters?: Map<string, ParameterInfo>;
+    public needsRebuild: boolean = false; // For incremental updates
 
     constructor (
         public type: ScopeType,

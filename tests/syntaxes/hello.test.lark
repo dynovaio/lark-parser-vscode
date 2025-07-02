@@ -6,6 +6,7 @@ word: WORD ["," | "!"]
 
 // imports WORD from library
 %import _common.WORD
+%import _common.WS_INLINE
 
 // Disregard spaces in text
-%ignore " "
+%ignore WS_INLINE
