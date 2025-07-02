@@ -11,35 +11,38 @@ export class LarkDocumentAnalyzer {
 
     // Enhanced regex patterns for better parsing
     private static readonly PATTERNS = {
-        // Rule definitions: rule_name: expression
-        RULE_DEFINITION: /^([a-z][a-z0-9_]*)\s*:\s*(.+)/,
+        // Rule definitions: rule_name: expression (can start with underscore)
+        RULE_DEFINITION: /^([a-z_][a-z0-9_]*)\s*:\s*(.+)/,
 
-        // Terminal definitions: TERMINAL_NAME: expression
-        TERMINAL_DEFINITION: /^([A-Z][A-Z0-9_]*)\s*:\s*(.+)/,
+        // Terminal definitions: TERMINAL_NAME: expression (can start with underscore)
+        TERMINAL_DEFINITION: /^([A-Z_][A-Z0-9_]*)\s*:\s*(.+)/,
 
-        // Parameterized rules: rule_name{param1, param2}: expression
-        PARAMETERIZED_RULE: /^([a-z][a-z0-9_]*)\s*\{\s*([^}]+)\}\s*:\s*(.+)/,
+        // Parameterized rules: rule_name{param1, param2}: expression (can start with underscore)
+        PARAMETERIZED_RULE: /^([a-z_][a-z0-9_]*)\s*\{\s*([^}]+)\}\s*:\s*(.+)/,
 
-        // Import statements support multiple formats:
-        // %import module.rule -> alias
-        // %import module.rule
-        // %import module.rule as alias
-        IMPORT_STATEMENT: /^%import\s+([a-z0-9_.]+)\.([a-zA-Z_][a-zA-Z0-9_]*)\s*(?:(?:->\s*|as\s+)([a-zA-Z_][a-zA-Z0-9_]*))?\s*$/,
+        // Import statements support five Lark formats:
+        // 1. %import module.TERMINAL
+        // 2. %import module.rule
+        // 3. %import module.TERMINAL -> NEWTERMINAL
+        // 4. %import module.rule -> newrule
+        // 5. %import module (TERM1, TERM2, rule1, rule2)
+        IMPORT_STATEMENT_SINGLE: /^%import\s+([a-z0-9_.]+)\.([a-zA-Z_][a-zA-Z0-9_]*)\s*(?:->\s*([a-zA-Z_][a-zA-Z0-9_]*))?\s*$/,
+        IMPORT_STATEMENT_MULTI: /^%import\s+([a-z0-9_.]+)\s*\(\s*([^)]+)\s*\)\s*$/,
 
-        // Symbol references in rule bodies
-        SYMBOL_REFERENCE: /\b([a-z][a-z0-9_]*|[A-Z][A-Z0-9_]*)\b/g,
+        // Declare directive: %declare TERMINAL1 TERMINAL2 ...
+        DECLARE_DIRECTIVE: /^%declare\s+(.+)$/,
 
-        // Parameterized rule calls: rule_name{arg1, arg2}
-        PARAMETERIZED_CALL: /([a-z][a-z0-9_]*)\s*\{\s*([^}]+)\}/g,
+        // Symbol references in rule bodies (can start with underscore)
+        SYMBOL_REFERENCE: /\b([a-z_][a-z0-9_]*|[A-Z_][A-Z0-9_]*)\b/g,
 
-        // Comments
+        // Parameterized rule calls: rule_name{arg1, arg2} (can start with underscore)
+        PARAMETERIZED_CALL: /([a-z_][a-z0-9_]*)\s*\{\s*([^}]+)\}/g,
+
+        // Comments (Lark only supports single-line comments)
         COMMENT: /\/\/.*$/,
 
-        // Multi-line comments
-        MULTI_LINE_COMMENT: /\/\*[\s\S]*?\*\//g,
-
-        // Directives
-        DIRECTIVE: /^%\w+.*$/
+        // Directives (only allowed: %ignore, %import, %declare, %override, %extend)
+        DIRECTIVE: /^%(ignore|import|declare|override|extend)\b.*$/
     };
 
     constructor (symbolTable: LarkSymbolTable) {
@@ -159,6 +162,10 @@ export class LarkDocumentAnalyzer {
             return;
         }
 
+        if (this.tryProcessDeclare(document, cleanDefinition, startLine)) {
+            return;
+        }
+
         if (this.tryProcessParameterizedRule(document, cleanDefinition, startLine, endLine)) {
             return;
         }
@@ -179,13 +186,77 @@ export class LarkDocumentAnalyzer {
      * Tries to process an import statement
      */
     private tryProcessImport(document: vscode.TextDocument, definition: string, lineIndex: number): boolean {
-        const match = definition.match(LarkDocumentAnalyzer.PATTERNS.IMPORT_STATEMENT);
+        // Try single symbol import first
+        let match = definition.match(LarkDocumentAnalyzer.PATTERNS.IMPORT_STATEMENT_SINGLE);
+        if (match) {
+            const [, moduleName, symbolName, alias] = match;
+            const finalName = alias || symbolName;
+
+            const range = new vscode.Range(lineIndex, 0, lineIndex, definition.length);
+            const location: SymbolLocation = {
+                range,
+                document: document.uri
+            };
+
+            const entry: SymbolTableEntry = {
+                name: finalName,
+                type: 'imported',
+                definition: location,
+                usages: [],
+                scope: this.symbolTable.getGlobalScope(),
+                isUsed: false,
+                importSource: moduleName,
+                originalName: symbolName
+            };
+
+            this.symbolTable.addSymbol(entry);
+            return true;
+        }
+
+        // Try multi-symbol import
+        match = definition.match(LarkDocumentAnalyzer.PATTERNS.IMPORT_STATEMENT_MULTI);
+        if (match) {
+            const [, moduleName, symbolsStr] = match;
+            const symbols = this.parseMultiImportSymbols(symbolsStr);
+
+            const range = new vscode.Range(lineIndex, 0, lineIndex, definition.length);
+            const location: SymbolLocation = {
+                range,
+                document: document.uri
+            };
+
+            // Add each imported symbol to the symbol table
+            for (const symbol of symbols) {
+                const entry: SymbolTableEntry = {
+                    name: symbol.alias || symbol.name,
+                    type: 'imported',
+                    definition: location,
+                    usages: [],
+                    scope: this.symbolTable.getGlobalScope(),
+                    isUsed: false,
+                    importSource: moduleName,
+                    originalName: symbol.name
+                };
+
+                this.symbolTable.addSymbol(entry);
+            }
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Tries to process a declare directive
+     */
+    private tryProcessDeclare(document: vscode.TextDocument, definition: string, lineIndex: number): boolean {
+        const match = definition.match(LarkDocumentAnalyzer.PATTERNS.DECLARE_DIRECTIVE);
         if (!match) {
             return false;
         }
 
-        const [, moduleName, symbolName, alias] = match;
-        const finalName = alias || symbolName;
+        const [, terminalsStr] = match;
+        const terminalNames = terminalsStr.split(/\s+/).filter(name => name.trim());
 
         const range = new vscode.Range(lineIndex, 0, lineIndex, definition.length);
         const location: SymbolLocation = {
@@ -193,18 +264,24 @@ export class LarkDocumentAnalyzer {
             document: document.uri
         };
 
-        const entry: SymbolTableEntry = {
-            name: finalName,
-            type: 'imported',
-            definition: location,
-            usages: [],
-            scope: this.symbolTable.getGlobalScope(),
-            isUsed: false,
-            importSource: moduleName,
-            originalName: symbolName
-        };
+        // Add each declared terminal to the symbol table
+        for (const terminalName of terminalNames) {
+            // Validate that it's a valid terminal name (uppercase, can start with underscore)
+            if (terminalName.match(/^[A-Z_][A-Z0-9_]*$/)) {
+                const entry: SymbolTableEntry = {
+                    name: terminalName,
+                    type: 'terminal',
+                    definition: location,
+                    usages: [],
+                    scope: this.symbolTable.getGlobalScope(),
+                    isUsed: false,
+                    isDeclared: true // Mark as declared vs defined
+                };
 
-        this.symbolTable.addSymbol(entry);
+                this.symbolTable.addSymbol(entry);
+            }
+        }
+
         return true;
     }
 
@@ -368,6 +445,25 @@ export class LarkDocumentAnalyzer {
     }
 
     /**
+     * Parses multi-import symbols from a parenthesized list
+     * Supports: TERM1, TERM2, rule1, rule2 (no aliasing within parentheses)
+     */
+    private parseMultiImportSymbols(symbolsStr: string): Array<{ name: string, alias?: string }> {
+        const symbols: Array<{ name: string, alias?: string }> = [];
+        const symbolParts = symbolsStr.split(',').map(s => s.trim());
+
+        for (const part of symbolParts) {
+            // Multi-import does not support aliasing - only simple symbol names
+            const name = part.trim();
+            if (name.match(/^[a-zA-Z_][a-zA-Z0-9_]*$/)) {
+                symbols.push({ name });
+            }
+        }
+
+        return symbols;
+    }
+
+    /**
      * Second pass: collect symbol references and validate usage
      */
     private async collectReferences(document: vscode.TextDocument, lines: string[]): Promise<void> {
@@ -482,21 +578,18 @@ export class LarkDocumentAnalyzer {
      * Removes comments from a line or text
      */
     private removeComments(text: string): string {
-        // Remove single-line comments
+        // Remove single-line comments (Lark only supports single-line comments)
         text = text.replace(LarkDocumentAnalyzer.PATTERNS.COMMENT, '');
-
-        // Remove multi-line comments
-        text = text.replace(LarkDocumentAnalyzer.PATTERNS.MULTI_LINE_COMMENT, '');
 
         return text.trim();
     }
 
     /**
-     * Checks if a line is a comment
+     * Checks if a line is a comment (Lark only supports single-line comments)
      */
     private isComment(line: string): boolean {
         const trimmed = line.trim();
-        return trimmed.startsWith('//') || trimmed.startsWith('/*');
+        return trimmed.startsWith('//');
     }
 
     /**

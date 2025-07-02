@@ -80,6 +80,9 @@ export interface SymbolTableEntry {
     // For imported symbols
     importSource?: string; // Module name for imported symbols
     originalName?: string; // Original name before alias
+
+    // For declared terminals (using %declare directive)
+    isDeclared?: boolean; // True if terminal was declared with %declare vs defined with :
 }
 
 // ============================================================================
