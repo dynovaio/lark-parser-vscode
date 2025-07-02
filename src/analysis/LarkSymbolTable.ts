@@ -10,11 +10,6 @@ import type {
     ParameterInfo
 } from './types.d';
 
-// Forward declaration to avoid circular dependency
-interface DocumentAnalyzer {
-    analyzeDocument(document: vscode.TextDocument): Promise<void>;
-}
-
 /**
  * Central symbol table for Lark grammar analysis
  * Manages symbols, scopes, and provides symbol resolution services
@@ -24,48 +19,10 @@ export class LarkSymbolTable {
     private scopes: Map<string, LarkScope>; // Rule name -> scope
     private documentUri: vscode.Uri | null = null;
     private documentVersion: number = -1;
-    private analyzer: DocumentAnalyzer | null = null;
 
     constructor () {
         this.globalScope = new LarkScope('global', new vscode.Range(0, 0, 0, 0));
         this.scopes = new Map();
-    }
-
-    /**
-     * Sets the document analyzer for this symbol table
-     * @param analyzer The LarkDocumentAnalyzer instance
-     */
-    setAnalyzer(analyzer: DocumentAnalyzer): void {
-        this.analyzer = analyzer;
-    }
-
-    /**
-     * Updates the symbol table from a document
-     * @param document The document to analyze
-     */
-    async updateFromDocument(document: vscode.TextDocument): Promise<void> {
-        // Check if document has changed
-        if (this.documentUri?.toString() === document.uri.toString() &&
-            this.documentVersion === document.version) {
-            return; // No changes needed
-        }
-
-        this.documentUri = document.uri;
-        this.documentVersion = document.version;
-
-        // Clear existing data
-        this.clearSymbolTable();
-
-        // Use analyzer if available, otherwise create basic global scope
-        if (this.analyzer) {
-            await this.analyzer.analyzeDocument(document);
-        } else {
-            // Fallback: create a basic global scope
-            this.globalScope = new LarkScope(
-                'global',
-                new vscode.Range(0, 0, document.lineCount - 1, 0)
-            );
-        }
     }
 
     /**
