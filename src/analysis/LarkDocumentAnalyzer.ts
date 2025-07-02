@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { LarkSymbolTable } from './LarkSymbolTable';
-import { SymbolTableEntry, SymbolType, ParameterInfo, SymbolLocation } from './SymbolTableTypes';
+import type { SymbolTableEntry, SymbolType, ParameterInfo, SymbolLocation } from './types.d';
 import { LarkScope } from './LarkScope';
 
 /**

@@ -1,5 +1,9 @@
 import * as vscode from 'vscode';
 
+// ============================================================================
+// CORE TYPE DEFINITIONS
+// ============================================================================
+
 /**
  * Types of symbols in a Lark grammar
  */
@@ -9,6 +13,10 @@ export type SymbolType = 'terminal' | 'rule' | 'parameter' | 'imported';
  * Types of scopes in Lark grammar analysis
  */
 export type ScopeType = 'global' | 'rule' | 'directive';
+
+// ============================================================================
+// SCOPE-RELATED INTERFACES
+// ============================================================================
 
 /**
  * Information about a parameter in a parameterized rule
@@ -28,7 +36,33 @@ export interface SymbolLocation {
 }
 
 /**
+ * Represents a scope context for symbol resolution
+ * Used by both LarkScope and LarkSymbolTable implementations
+ */
+export interface Scope {
+    type: ScopeType;
+    name?: string; // Rule name for rule scopes
+    parent?: Scope;
+    range: vscode.Range;
+
+    // Symbol storage
+    symbols: Map<string, SymbolTableEntry>;
+    parameters?: Map<string, ParameterInfo>; // Available parameters in this scope
+
+    // Scope operations
+    resolveSymbol(name: string): SymbolTableEntry | null;
+    addSymbol(entry: SymbolTableEntry): void;
+    isParameterDefined(name: string): boolean;
+    getParameterInfo(name: string): ParameterInfo | null;
+}
+
+// ============================================================================
+// SYMBOL TABLE INTERFACES
+// ============================================================================
+
+/**
  * Entry in the symbol table
+ * Central interface representing any symbol in a Lark grammar
  */
 export interface SymbolTableEntry {
     name: string;
@@ -48,6 +82,10 @@ export interface SymbolTableEntry {
     originalName?: string; // Original name before alias
 }
 
+// ============================================================================
+// VALIDATION AND ANALYSIS INTERFACES
+// ============================================================================
+
 /**
  * Validation result for parameter arguments
  */
@@ -57,25 +95,9 @@ export interface ValidationResult {
     errorRange?: vscode.Range;
 }
 
-/**
- * Represents a scope context for symbol resolution
- */
-export interface Scope {
-    type: ScopeType;
-    name?: string; // Rule name for rule scopes
-    parent?: Scope;
-    range: vscode.Range;
-
-    // Symbol storage
-    symbols: Map<string, SymbolTableEntry>;
-    parameters?: Map<string, ParameterInfo>; // Available parameters in this scope
-
-    // Scope operations
-    resolveSymbol(name: string): SymbolTableEntry | null;
-    addSymbol(entry: SymbolTableEntry): void;
-    isParameterDefined(name: string): boolean;
-    getParameterInfo(name: string): ParameterInfo | null;
-}
+// ============================================================================
+// PARSING AND USAGE TRACKING INTERFACES
+// ============================================================================
 
 /**
  * Information about a parameterized rule usage

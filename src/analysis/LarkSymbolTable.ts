@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { LarkScope } from './LarkScope';
-import {
+import type {
     Scope,
     SymbolTableEntry,
     SymbolType,
@@ -8,8 +8,8 @@ import {
     ParameterizedRuleUsage,
     ValidationResult,
     ParameterInfo
-} from './SymbolTableTypes';
-import { SymbolDefinition } from '../features/SymbolResolver';
+} from './types.d';
+import type { SymbolDefinition } from '../features/SymbolResolver';
 
 /**
  * Central symbol table for Lark grammar analysis

@@ -9,6 +9,7 @@
 !.vscode/settings.json
 !.vscode/tasks.json
 !.vscodeignore
+!.vscode-test.mjs
 
 node_modules/
 dist/

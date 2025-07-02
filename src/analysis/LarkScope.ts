@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { Scope, ScopeType, SymbolTableEntry, ParameterInfo } from './SymbolTableTypes';
+import type { Scope, ScopeType, SymbolTableEntry, ParameterInfo } from './types.d';
 
 /**
  * Basic implementation of a scope for symbol resolution
