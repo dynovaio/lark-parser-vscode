@@ -12,7 +12,7 @@ item: NAME "=" VALUE? _NL
 NAME: /\w/+
 VALUE: /./+
 
-%import common.NEWLINE -> _NL
-%import common.WS_INLINE
+%import _common.NEWLINE -> _NL
+%import _common.WS_INLINE
 %ignore WS_INLINE
 ```

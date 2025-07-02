@@ -1,0 +1,93 @@
+// Test file for parameterized rule syntax highlighting
+
+// Basic parameterized rule definition
+comprehension{comp_result}: comp_result comp_fors [comp_if]
+
+// Parameterized rule with conditional modifier
+?optional_rule{param}: param optional_content
+
+// Parameterized rule with pinned modifier
+!pinned_rule{param}: param pinned_content
+
+// Parameterized rule with priority
+parameterized_with_priority{param}.5: param content
+
+// Usage of parameterized rules
+arguments: argvalue ("," argvalue)*  ("," [ starargs | kwargs])?
+         | starargs
+         | kwargs
+         | comprehension{test}
+
+// Multiple parameterized rule usages
+complex_expr: comprehension{expr}
+            | comprehension{test}
+            | other_param_rule{value}
+
+// Regular rules (should still work)
+regular_rule: "content" TERMINAL
+?conditional_rule: content
+!pinned_rule: content
+
+?_conditional_rule: content
+!_pinned_rule: content
+
+// Terminals
+TERMINAL: /[a-zA-Z]+/
+
+_separated{x, sep}: x (sep x)*  // Define a sequence of 'x sep x sep x ...'
+
+num_list: "[" _separated{NUMBER, ","} "]"   // Will match "[1, 2, 3]" etc.
+
+// More complex multiple parameter examples
+_optional_separated{item, sep, terminator}: item (sep item)* [terminator]
+_bracketed{content, open, close}: open content close
+
+// Usage with multiple parameters
+function_call: IDENTIFIER _bracketed{arguments, "(", ")"}
+array_literal: _bracketed{_separated{expression, ","}, "[", "]"}
+
+// Conditional and pinned rules with multiple parameters
+?_optional_list{element, delimiter}: element (delimiter element)*
+!_required_list{element, delimiter}: element (delimiter element)+
+
+// Mixed single and multiple parameters in usage
+complex_structure: _separated{_bracketed{item, "<", ">"}, ","}
+                 | comprehension{test}
+                 | _optional_list{WORD, " "}
+
+// Edge cases
+_empty_params{}: "empty"
+_single_param{x}: x
+_two_params{a, b}: a b
+_three_params{x, y, z}: x y z
+_with_spaces{ item , sep }: item sep   // Spaces around parameters should work
+
+// Test underscore rules with priority
+_priority_rule{param}.10: param "high_priority"
+
+// NUMBER terminal for testing
+NUMBER: /\d+/
+IDENTIFIER: /[a-zA-Z_][a-zA-Z0-9_]*/
+WORD: /\w+/
+
+
+// Additional edge cases for testing improved regex patterns
+
+// Empty parameters (should be highlighted correctly now)
+_empty_test{}: "just empty braces"
+?_optional_empty{}: "optional with empty params"
+!_pinned_empty{}: "pinned with empty params"
+
+// Extra spaces around parameters (should work now)
+_extra_spaces{ x , y , z }: x y z
+_mixed_spacing{a,b , c,  d}: a b c d
+_trailing_spaces{ param }: param
+
+// Empty with spaces
+_empty_with_spaces{  }: "empty with spaces inside"
+_empty_with_tabs{	}: "empty with tabs"
+
+// Complex combinations
+_complex{ first_param , second_param }: first_param second_param
+?_optional_spaced{ item , separator }: item separator
+!_pinned_spaced{ content , wrapper }: wrapper content wrapper

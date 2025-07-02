@@ -16,6 +16,6 @@ NOUN: "flies" | "bananas" | "fruit"
 VERB: "like" | "flies"
 ADJ: "fruit"
 
-%import common.WS
+%import _common.WS
 %ignore WS
 ```

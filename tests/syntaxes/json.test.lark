@@ -16,8 +16,8 @@ pair   : string ":" value
 
 string : ESCAPED_STRING
 
-%import common.ESCAPED_STRING
-%import common.SIGNED_NUMBER
-%import common.WS
+%import _common.ESCAPED_STRING
+%import _common.SIGNED_NUMBER
+%import _common.WS
 
 %ignore WS

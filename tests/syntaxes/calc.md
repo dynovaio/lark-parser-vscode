@@ -19,9 +19,9 @@
     | NAME -> var
     | "(" sum ")"
 
-%import common.CNAME -> NAME
-%import common.NUMBER
-%import common.WS_INLINE
+%import _common.CNAME -> NAME
+%import _common.NUMBER
+%import _common.WS_INLINE
 
 %ignore WS_INLINE
 ```

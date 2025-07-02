@@ -8,7 +8,7 @@ start: word+
 word: WORD ["," | "!"]
 
 // imports WORD from library
-%import common.WORD
+%import _common.WORD
 
 // Disregard spaces in text
 %ignore " "
