@@ -6,7 +6,10 @@ import {
     RULE_DEFINITION_REGEX,
     TERMINAL_USAGE_REGEX,
     RULE_USAGE_REGEX,
-    DEFINITION_HEAD_REGEX
+    PARAMETERIZED_RULE_USAGE_REGEX,
+    PARAMETERIZED_RULE_DEFINITION_REGEX,
+    DEFINITION_HEAD_REGEX,
+    parseParameters
 } from '@/utils/LarkRegexPatterns';
 import {
     shouldSkipLine,
@@ -119,9 +122,7 @@ export class LarkValidator {
         }
 
         return diagnostics;
-    }
-
-    /**
+    }    /**
      * Processes a single line to find undefined symbol references
      */
     private processLineForUndefinedSymbols(
@@ -132,10 +133,12 @@ export class LarkValidator {
     ): void {
         let searchableText = lineText;
         let searchOffset = 0;
+        let ruleParameters: string[] = []; // Parameters for parameterized rules
 
         // Check if this line contains a definition
         const terminalDefMatch = TERMINAL_DEFINITION_REGEX.exec(lineText);
         const ruleDefMatch = RULE_DEFINITION_REGEX.exec(lineText);
+        const parameterizedRuleDefMatch = PARAMETERIZED_RULE_DEFINITION_REGEX.exec(lineText);
         const definitionHeadMatch = DEFINITION_HEAD_REGEX.exec(lineText);
 
         if (terminalDefMatch || ruleDefMatch) {
@@ -144,6 +147,12 @@ export class LarkValidator {
             if (colonIndex >= 0) {
                 searchOffset = colonIndex + 1;
                 searchableText = lineText.slice(searchOffset);
+            }
+
+            // If this is a parameterized rule definition, extract parameters
+            if (parameterizedRuleDefMatch) {
+                const parametersString = parameterizedRuleDefMatch[2];
+                ruleParameters = parseParameters(parametersString);
             }
         } else if (definitionHeadMatch) {
             // Report error for invalid definition head
@@ -164,9 +173,53 @@ export class LarkValidator {
         // Strip content that should be ignored
         searchableText = stripIgnoredContent(searchableText);
 
-        // Check for undefined terminal and rule references
-        this.checkSymbolUsages(searchableText, searchOffset, lineIndex, symbolDefinitions, diagnostics, 'terminal');
-        this.checkSymbolUsages(searchableText, searchOffset, lineIndex, symbolDefinitions, diagnostics, 'rule');
+        // First, remove parameterized rule usages to avoid false matches in regular rule processing
+        // This prevents cases like "comprehension{test}" from matching "test" as a regular rule
+        const textWithoutParameterizedRules = searchableText.replace(/\b[a-z_][a-z_0-9]*\{[^}]*\}/g, '');
+
+        // Check for undefined terminal references
+        this.checkSymbolUsages(textWithoutParameterizedRules, searchOffset, lineIndex, symbolDefinitions, diagnostics, 'terminal', ruleParameters);
+
+        // Check for undefined rule references (now without parameterized rules)
+        this.checkSymbolUsages(textWithoutParameterizedRules, searchOffset, lineIndex, symbolDefinitions, diagnostics, 'rule', ruleParameters);
+
+        // Check for undefined parameterized rule usages (using original text)
+        this.checkParameterizedRuleUsages(searchableText, searchOffset, lineIndex, symbolDefinitions, diagnostics);
+    }
+
+    /**
+     * Checks for undefined parameterized rule usages
+     */
+    private checkParameterizedRuleUsages(
+        searchableText: string,
+        searchOffset: number,
+        lineIndex: number,
+        symbolDefinitions: Record<string, SymbolDefinition>,
+        diagnostics: vscode.Diagnostic[]
+    ): void {
+        let parameterizedMatch;
+        while ((parameterizedMatch = PARAMETERIZED_RULE_USAGE_REGEX.exec(searchableText)) !== null) {
+            const baseRuleName = parameterizedMatch[1];
+
+            // Skip 'start' rule as it's special
+            if (baseRuleName === 'start') {
+                continue;
+            }
+
+            // Check if this base rule is defined (either as regular or parameterized rule)
+            if (!this.symbolResolver.isBaseRuleDefined(baseRuleName, symbolDefinitions)) {
+                const actualStartPosition = searchOffset + parameterizedMatch.index;
+                const fullRuleUsage = parameterizedMatch[0]; // Full match like "rule{param}"
+                const range = createSymbolRange(lineIndex, actualStartPosition, fullRuleUsage);
+
+                const diagnostic = new vscode.Diagnostic(
+                    range,
+                    `Undefined parameterized rule '${baseRuleName}'`,
+                    vscode.DiagnosticSeverity.Error
+                );
+                diagnostics.push(diagnostic);
+            }
+        }
     }
 
     /**
@@ -178,7 +231,8 @@ export class LarkValidator {
         lineIndex: number,
         symbolDefinitions: Record<string, SymbolDefinition>,
         diagnostics: vscode.Diagnostic[],
-        symbolType: 'terminal' | 'rule'
+        symbolType: 'terminal' | 'rule',
+        ruleParameters: string[] = []
     ): void {
         const usageRegex = symbolType === 'terminal' ? TERMINAL_USAGE_REGEX : RULE_USAGE_REGEX;
 
@@ -188,6 +242,12 @@ export class LarkValidator {
 
             // Skip 'start' rule as it's special
             if (symbolType === 'rule' && referencedSymbolName === 'start') {
+                continue;
+            }
+
+            // Skip if this is a parameter in a parameterized rule definition
+            // Parameters like "comp_result" in "comprehension{comp_result}: comp_result ..." should not be validated
+            if (symbolType === 'rule' && ruleParameters.includes(referencedSymbolName)) {
                 continue;
             }
 
