@@ -11,6 +11,9 @@ function activate(context: vscode.ExtensionContext) {
     const symbolTable = new LarkSymbolTable();
     const analyzer = new LarkDocumentAnalyzer(symbolTable);
 
+    // Connect analyzer to symbol table (for updateFromDocument calls)
+    symbolTable.setAnalyzer(analyzer);
+
     // Core providers
     const symbolProvider = new LarkSymbolProvider();
     const validator = new LarkValidator();

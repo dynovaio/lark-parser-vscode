@@ -9,6 +9,11 @@ import type {
     ValidationResult,
     ParameterInfo
 } from './types.d';
+
+// Forward declaration to avoid circular dependency
+interface DocumentAnalyzer {
+    analyzeDocument(document: vscode.TextDocument): Promise<void>;
+}
 import type { SymbolDefinition } from '../features/SymbolResolver';
 
 /**
@@ -20,10 +25,19 @@ export class LarkSymbolTable {
     private scopes: Map<string, LarkScope>; // Rule name -> scope
     private documentUri: vscode.Uri | null = null;
     private documentVersion: number = -1;
+    private analyzer: DocumentAnalyzer | null = null;
 
     constructor () {
         this.globalScope = new LarkScope('global', new vscode.Range(0, 0, 0, 0));
         this.scopes = new Map();
+    }
+
+    /**
+     * Sets the document analyzer for this symbol table
+     * @param analyzer The LarkDocumentAnalyzer instance
+     */
+    setAnalyzer(analyzer: DocumentAnalyzer): void {
+        this.analyzer = analyzer;
     }
 
     /**
@@ -43,12 +57,16 @@ export class LarkSymbolTable {
         // Clear existing data
         this.clearSymbolTable();
 
-        // TODO: This will be implemented when we add LarkDocumentAnalyzer
-        // For now, we create a basic global scope
-        this.globalScope = new LarkScope(
-            'global',
-            new vscode.Range(0, 0, document.lineCount - 1, 0)
-        );
+        // Use analyzer if available, otherwise create basic global scope
+        if (this.analyzer) {
+            await this.analyzer.analyzeDocument(document);
+        } else {
+            // Fallback: create a basic global scope
+            this.globalScope = new LarkScope(
+                'global',
+                new vscode.Range(0, 0, document.lineCount - 1, 0)
+            );
+        }
     }
 
     /**
@@ -246,6 +264,16 @@ export class LarkSymbolTable {
     }
 
     /**
+     * Sets the document context for this symbol table
+     * @param documentUri The document URI
+     * @param documentVersion The document version
+     */
+    setDocumentContext(documentUri: vscode.Uri, documentVersion: number): void {
+        this.documentUri = documentUri;
+        this.documentVersion = documentVersion;
+    }
+
+    /**
      * Clears all symbols and scopes
      */
     private clearSymbolTable(): void {
@@ -260,7 +288,8 @@ export class LarkSymbolTable {
     clearDocument(documentUri: vscode.Uri): void {
         if (this.documentUri?.toString() === documentUri.toString()) {
             this.clearSymbolTable();
-            this.documentUri = null;
+            // Note: Don't set documentUri to null here, as we might be clearing
+            // in preparation for repopulating the same document
             this.documentVersion = -1;
         }
     }

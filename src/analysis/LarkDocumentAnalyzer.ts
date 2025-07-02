@@ -12,7 +12,7 @@ export class LarkDocumentAnalyzer {
     // Enhanced regex patterns for better parsing
     private static readonly PATTERNS = {
         // Rule definitions: rule_name: expression (can start with underscore)
-        RULE_DEFINITION: /^([a-z_][a-z0-9_]*)\s*:\s*(.+)/,
+        RULE_DEFINITION: /^\s*[?!]?([a-z_][a-z0-9_]*)\s*:\s*(.+)/,
 
         // Terminal definitions: TERMINAL_NAME: expression (can start with underscore)
         TERMINAL_DEFINITION: /^([A-Z_][A-Z0-9_]*)\s*:\s*(.+)/,
@@ -55,11 +55,11 @@ export class LarkDocumentAnalyzer {
      * @returns Promise that resolves when analysis is complete
      */
     public async analyzeDocument(document: vscode.TextDocument): Promise<void> {
+        // Set document context in symbol table (needed for clearDocument to work)
+        this.symbolTable.setDocumentContext(document.uri, document.version);
+
         // Clear existing symbols for this document
         this.symbolTable.clearDocument(document.uri);
-
-        // Set the symbol table's document tracking
-        await this.symbolTable.updateFromDocument(document);
 
         const text = document.getText();
         const lines = text.split('\n');

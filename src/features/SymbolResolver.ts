@@ -15,13 +15,13 @@ export interface SymbolDefinition {
 
 /**
  * Manages symbol definitions and their usage tracking
- * Now integrates with LarkSymbolTable for centralized symbol management
+ * Uses LarkSymbolTable for centralized symbol management
  */
 export class SymbolResolver {
-    private symbolTable: LarkSymbolTable | null = null;
+    private symbolTable!: LarkSymbolTable;
 
     /**
-     * Sets the symbol table for modern symbol resolution
+     * Sets the symbol table for symbol resolution
      * @param symbolTable The symbol table to use for resolution
      */
     public setSymbolTable(symbolTable: LarkSymbolTable): void {
