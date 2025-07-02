@@ -6,18 +6,46 @@ import {
     parseParameters
 } from '@/utils/LarkRegexPatterns';
 import { createLineRange } from '@/utils/DocumentUtils';
+import { LarkSymbolTable } from '@/analysis/LarkSymbolTable';
 
 /**
  * Provides document symbols for Lark grammar files
  * Implements VS Code's DocumentSymbolProvider interface
+ *
+ * Supports both modern (symbol table-based) and legacy (regex-based) approaches
+ * for backwards compatibility during migration.
  */
 export class LarkSymbolProvider implements vscode.DocumentSymbolProvider {
+    private symbolTable?: LarkSymbolTable;
+
+    /**
+     * Sets the symbol table for modern symbol resolution
+     * @param symbolTable The LarkSymbolTable instance
+     */
+    setSymbolTable(symbolTable: LarkSymbolTable): void {
+        this.symbolTable = symbolTable;
+    }
     /**
      * Analyzes a document and returns all symbol definitions
      * @param document The document to analyze
      * @returns Array of DocumentSymbol objects representing all symbols in the document
      */
     provideDocumentSymbols(document: vscode.TextDocument): vscode.DocumentSymbol[] {
+        // Use modern symbol table approach if available
+        if (this.symbolTable) {
+            return this.symbolTable.getDocumentSymbols();
+        }
+
+        // Fallback to legacy regex-based approach
+        return this.provideDocumentSymbolsLegacy(document);
+    }
+
+    /**
+     * Legacy regex-based document symbol provision
+     * @param document The document to analyze
+     * @returns Array of DocumentSymbol objects
+     */
+    private provideDocumentSymbolsLegacy(document: vscode.TextDocument): vscode.DocumentSymbol[] {
         const documentSymbols: vscode.DocumentSymbol[] = [];
 
         for (let lineIndex = 0; lineIndex < document.lineCount; lineIndex++) {

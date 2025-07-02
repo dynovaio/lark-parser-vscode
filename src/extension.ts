@@ -1,13 +1,23 @@
 import * as vscode from 'vscode';
 import { LarkSymbolProvider } from '@/providers/DocumentSymbolProvider';
 import { LarkValidator } from '@/analysis/LarkValidator';
+import { LarkSymbolTable } from '@/analysis/LarkSymbolTable';
+import { LarkDocumentAnalyzer } from '@/analysis/LarkDocumentAnalyzer';
 
 function activate(context: vscode.ExtensionContext) {
     const selector = { language: 'lark', scheme: 'file' };
 
+    // Core analysis components
+    const symbolTable = new LarkSymbolTable();
+    const analyzer = new LarkDocumentAnalyzer(symbolTable);
+
     // Core providers
     const symbolProvider = new LarkSymbolProvider();
     const validator = new LarkValidator();
+
+    // Connect symbol table to providers
+    symbolProvider.setSymbolTable(symbolTable);
+    validator.setSymbolTable(symbolTable);
 
     // Register Document Symbol Provider
     context.subscriptions.push(
@@ -34,7 +44,7 @@ function setupDocumentValidation(validator: LarkValidator, diagnosticCollection:
     // Validate currently open Lark document
     if (vscode.window.activeTextEditor) {
         const doc = vscode.window.activeTextEditor.document;
-        if (doc.languageId === 'lark') {validator.validateTextDocument(doc, diagnosticCollection);}
+        if (doc.languageId === 'lark') { validator.validateTextDocument(doc, diagnosticCollection); }
     }
 
     // Re-validate on change, open, close
