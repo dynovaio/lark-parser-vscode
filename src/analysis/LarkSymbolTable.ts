@@ -17,22 +17,10 @@ import type {
 export class LarkSymbolTable {
     private globalScope: LarkScope;
     private scopes: Map<string, LarkScope>; // Rule name -> scope
-    private documentUri: vscode.Uri | null = null;
-    private documentVersion: number = -1;
 
     constructor () {
         this.globalScope = new LarkScope('global', new vscode.Range(0, 0, 0, 0));
         this.scopes = new Map();
-    }
-
-    /**
-     * Updates the symbol table from a text change event (incremental update)
-     * @param change The text change event
-     */
-    updateFromTextChange(change: vscode.TextDocumentChangeEvent): void {
-        // TODO: Implement incremental updates
-        // For now, mark for full rebuild
-        this.documentVersion = -1;
     }
 
     /**
@@ -204,34 +192,11 @@ export class LarkSymbolTable {
     }
 
     /**
-     * Sets the document context for this symbol table
-     * @param documentUri The document URI
-     * @param documentVersion The document version
-     */
-    setDocumentContext(documentUri: vscode.Uri, documentVersion: number): void {
-        this.documentUri = documentUri;
-        this.documentVersion = documentVersion;
-    }
-
-    /**
      * Clears all symbols and scopes
      */
     private clearSymbolTable(): void {
         this.globalScope = new LarkScope('global', new vscode.Range(0, 0, 0, 0));
         this.scopes.clear();
-    }
-
-    /**
-     * Clears all symbols for a specific document
-     * @param documentUri URI of the document to clear
-     */
-    clearDocument(documentUri: vscode.Uri): void {
-        if (this.documentUri?.toString() === documentUri.toString()) {
-            this.clearSymbolTable();
-            // Note: Don't set documentUri to null here, as we might be clearing
-            // in preparation for repopulating the same document
-            this.documentVersion = -1;
-        }
     }
 
     /**
@@ -291,9 +256,6 @@ export class LarkSymbolTable {
             entry.definition.range
         );
     }
-
-    // INCREMENTAL UPDATE METHODS
-    // ==========================
 
     /**
      * Clear all symbols in a specific scope
