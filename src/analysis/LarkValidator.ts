@@ -57,7 +57,7 @@ export class LarkValidator {
         for (const symbolName of unusedSymbols) {
             const symbol = symbolTable.resolveSymbol(symbolName);
             if (symbol) {
-                const range = symbol.definition.range;
+                const range = symbol.location.range;
                 const diagnostic = new vscode.Diagnostic(
                     range,
                     `Unused grammar symbol '${symbolName}'`,

@@ -10,6 +10,18 @@ import type {
     ParameterInfo
 } from './types.d';
 
+
+export enum SymbolTypes {
+    TERMINAL = 'terminal',
+    RULE = 'rule',
+    UNKNOWN = 'unknown',
+}
+
+export enum SymbolModifiers {
+    CONDITIONAL_INLINE = '?',
+    PIN = '!',
+}
+
 /**
  * Central symbol table for Lark grammar analysis
  * Manages symbols, scopes, and provides symbol resolution services
@@ -252,8 +264,8 @@ export class LarkSymbolTable {
             entry.name,
             detail,
             symbolKind,
-            entry.definition.range,
-            entry.definition.range
+            entry.location.range,
+            entry.location.range
         );
     }
 

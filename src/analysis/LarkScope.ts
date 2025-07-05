@@ -1,6 +1,12 @@
 import * as vscode from 'vscode';
 import type { Scope, ScopeType, SymbolTableEntry, ParameterInfo } from './types.d';
 
+
+export enum ScopeTypes {
+    GLOBAL = 'global',
+    RULE = 'rule',
+}
+
 /**
  * Basic implementation of a scope for symbol resolution
  */

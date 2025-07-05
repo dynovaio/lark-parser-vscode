@@ -1,39 +1,13 @@
 import * as vscode from 'vscode';
 
 // ============================================================================
-// CORE TYPE DEFINITIONS
-// ============================================================================
-
-/**
- * Types of symbols in a Lark grammar
- */
-export type SymbolType = 'terminal' | 'rule' | 'parameter' | 'imported';
-
-/**
- * Types of scopes in Lark grammar analysis
- */
-export type ScopeType = 'global' | 'rule' | 'directive';
-
-// ============================================================================
 // SCOPE-RELATED INTERFACES
 // ============================================================================
 
 /**
- * Information about a parameter in a parameterized rule
+ * Types of scopes in Lark grammar analysis
  */
-export interface ParameterInfo {
-    name: string;
-    position: number; // Position in parameter list (0-based)
-    range: vscode.Range; // Location in document
-}
-
-/**
- * Location information for a symbol
- */
-export interface SymbolLocation {
-    range: vscode.Range;
-    uri: vscode.Uri;
-}
+export type ScopeType = 'global' | 'rule';
 
 /**
  * Represents a scope context for symbol resolution
@@ -61,28 +35,89 @@ export interface Scope {
 // ============================================================================
 
 /**
+ * Types of symbols in a Lark grammar
+ */
+export type SymbolType = 'terminal' | 'rule' | 'unknown';
+
+export type SymbolModifier = '?' | '!';
+
+/**
+ * Symbol definition in file
+ */
+export interface SymbolDefinition {
+    lines: string[]; // Symbol name
+    body: string; // Definition body (for rules, terminals, etc.)
+    startIndex: number; // Location in document
+    endIndex: number; // Location in document overrides a previous definition
+}
+
+/**
+ * Location information for a symbol
+ */
+export interface SymbolLocation {
+    range: vscode.Range;
+    uri: vscode.Uri;
+}
+
+/**
+ * Information about a parameter in a parameterized rule
+ */
+export interface ParameterInfo {
+    name: string;
+    position: number; // Position in parameter list (0-based)
+    range: vscode.Range; // Location in document
+}
+
+/**
  * Entry in the symbol table
  * Central interface representing any symbol in a Lark grammar
  */
 export interface SymbolTableEntry {
+    // Basic symbol information
     name: string;
+    priority: number;
+    body?: string;
+    isDefined?: boolean;
+
+    // Symbol metadata
     type: SymbolType;
-    definition: SymbolLocation;
-    usages: SymbolLocation[];
+    location: SymbolLocation;
     scope: Scope;
-    isUsed: boolean;
 
     // For parameterized rules
-    isParameterized?: boolean;
-    baseRuleName?: string; // For parameterized rules, the base name without parameters
-    parameters?: ParameterInfo[]; // Parameters defined by this rule
+    isTemplated?: boolean;
+    baseRuleName?: string;
+    parameters?: ParameterInfo[];
 
-    // For imported symbols
-    importSource?: string; // Module name for imported symbols
-    originalName?: string; // Original name before alias
+    // Usage tracking
+    usages: SymbolLocation[];
+    isUsed: boolean;
 
-    // For declared terminals (using %declare directive)
-    isDeclared?: boolean; // True if terminal was declared with %declare vs defined with :
+    // Modifiers
+    isInlined?: boolean;
+    isConditionallyInlined?: boolean;
+    isPinned?: boolean;
+
+    // Directive related metadata
+    isIgnored?: boolean;
+    ignoreLocations?: SymbolLocation[];
+
+    isDeclared?: boolean;
+
+    isOverridden?: boolean;
+    overrideLocations?: SymbolLocation[];
+
+    isExtended?: boolean;
+    textensionLocations?: SymbolLocation[];
+
+    isImported?: boolean;
+    importSource?: string;
+    importName?: string;
+
+    // For aliases rules
+    isAlias?: boolean;
+    originalName?: string;
+    originalType?: string;
 }
 
 // ============================================================================
