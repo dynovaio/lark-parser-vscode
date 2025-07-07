@@ -10,8 +10,8 @@ suite('LarkDocumentAnalyzer Integration', () => {
     let symbolTable: LarkSymbolTable;
 
     setup(() => {
+        analyzer = new LarkDocumentAnalyzer();
         symbolTable = new LarkSymbolTable();
-        analyzer = new LarkDocumentAnalyzer(symbolTable);
     });
 
     /**
@@ -124,7 +124,7 @@ suite('LarkDocumentAnalyzer Integration', () => {
             const content = loadTestGrammar('calc.test.lark');
             const document = createDocument(content, 'test://calc.lark');
 
-            await analyzer.analyzeDocument(document);
+            symbolTable = await analyzer.analyze(document);
 
             // Should have found some symbols
             const allSymbols = symbolTable.getAllSymbols();
@@ -157,7 +157,7 @@ suite('LarkDocumentAnalyzer Integration', () => {
             const content = loadTestGrammar('json.test.lark');
             const document = createDocument(content, 'test://json.lark');
 
-            await analyzer.analyzeDocument(document);
+            symbolTable = await analyzer.analyze(document);
 
             // Should have found some symbols
             const allSymbols = symbolTable.getAllSymbols();
@@ -218,7 +218,7 @@ another_unused: WORD "unused"
         `.trim();
 
         const document = createDocument(content, 'test://complex.lark');
-        await analyzer.analyzeDocument(document);
+        symbolTable = await analyzer.analyze(document);
 
         // Check imports
         const wordImport = symbolTable.resolveSymbol('WORD');
@@ -226,14 +226,14 @@ another_unused: WORD "unused"
 
         assert.ok(wordImport, 'WORD import should be found');
         assert.ok(numImport, 'NUM import should be found');
-        assert.strictEqual(wordImport.type, 'imported');
-        assert.strictEqual(numImport.type, 'imported');
+        assert.strictEqual(wordImport.isImported, true);
+        assert.strictEqual(numImport.isImported, true);
         assert.strictEqual(numImport.originalName, 'NUMBER');
 
         // Check parameterized rules
         const listRule = symbolTable.resolveSymbol('list');
         assert.ok(listRule, 'list rule should be found');
-        assert.strictEqual(listRule.isParameterized, true);
+        assert.strictEqual(listRule.isTemplated, true);
         assert.ok(listRule.parameters, 'list should have parameters');
         assert.strictEqual(listRule.parameters.length, 1);
         assert.strictEqual(listRule.parameters[0].name, 'item');
@@ -266,10 +266,17 @@ another_unused: WORD "unused"
             acc[s.type] = (acc[s.type] || 0) + 1;
             return acc;
         }, {} as Record<string, number>);
-
         console.log('Symbol distribution:', symbolsByType);
         assert.ok(symbolsByType.rule > 0, 'should have rules');
-        assert.ok(symbolsByType.imported > 0, 'should have imported symbols');
+        assert.ok(symbolsByType.terminal > 0, 'should have terminal symbols');
+
+        const symbolsByOrigin = allSymbols.reduce((acc, s) => {
+            acc[s.isImported ? 'imported' : 'local'] = (acc[s.isImported ? 'imported' : 'local'] || 0) + 1;
+            return acc;
+        }, {} as Record<string, number>);
+        console.log('Symbols by origin:', symbolsByOrigin);
+        assert.ok(symbolsByOrigin.local > 0, 'should have local symbols');
+        assert.ok(symbolsByOrigin.imported > 0, 'should have imported symbols');
     });
 
     test('should provide document symbols for VS Code outline', async () => {
@@ -287,7 +294,7 @@ NUMBER: /\\d+/
         `.trim();
 
         const document = createDocument(content, 'test://outline.lark');
-        await analyzer.analyzeDocument(document);
+        symbolTable = await analyzer.analyze(document);
 
         const documentSymbols = symbolTable.getDocumentSymbols();
         assert.ok(documentSymbols.length > 0, 'should provide document symbols');

@@ -9,8 +9,8 @@ suite('LarkDocumentAnalyzer', () => {
     let symbolTable: LarkSymbolTable;
 
     setup(() => {
+        analyzer = new LarkDocumentAnalyzer();
         symbolTable = new LarkSymbolTable();
-        analyzer = new LarkDocumentAnalyzer(symbolTable);
     });
 
     /**
@@ -118,7 +118,7 @@ world: "world"
             `.trim();
 
             const document = createMockDocument(content);
-            await analyzer.analyzeDocument(document);
+            symbolTable = await analyzer.analyze(document);
 
             // Check that rules were parsed
             const startRule = symbolTable.resolveSymbol('start');
@@ -142,7 +142,7 @@ WORLD: "world"
             `.trim();
 
             const document = createMockDocument(content);
-            await analyzer.analyzeDocument(document);
+            symbolTable = await analyzer.analyze(document);
 
             // Check that terminals were parsed
             const helloTerminal = symbolTable.resolveSymbol('HELLO');
@@ -163,14 +163,14 @@ WORD: /\\w+/
             `.trim();
 
             const document = createMockDocument(content);
-            await analyzer.analyzeDocument(document);
+            symbolTable = await analyzer.analyze(document);
 
             // Check that parameterized rule was parsed
             const listRule = symbolTable.resolveSymbol('list');
 
             assert.ok(listRule, 'list rule should be found');
             assert.strictEqual(listRule.type, 'rule');
-            assert.strictEqual(listRule.isParameterized, true);
+            assert.strictEqual(listRule.isTemplated, true);
             assert.strictEqual(listRule.baseRuleName, 'list');
             assert.ok(listRule.parameters, 'parameters should be defined');
             assert.strictEqual(listRule.parameters.length, 1);
@@ -196,7 +196,7 @@ NUMBER: /\\d+/
             `.trim();
 
             const document = createMockDocument(content);
-            await analyzer.analyzeDocument(document);
+            symbolTable = await analyzer.analyze(document);
 
             // Check that all rules were parsed
             const exprRule = symbolTable.resolveSymbol('expr');
@@ -227,7 +227,7 @@ start: WORD NUM json_value
             `.trim();
 
             const document = createMockDocument(content);
-            await analyzer.analyzeDocument(document);
+            symbolTable = await analyzer.analyze(document);
 
             // Check that imported symbols were parsed
             const wordImport = symbolTable.resolveSymbol('WORD');
@@ -238,8 +238,8 @@ start: WORD NUM json_value
             assert.ok(numImport, 'NUM import should be found');
             // Note: 'as' syntax is not in our current regex, but 'NUM' should be found
 
-            assert.strictEqual(wordImport.type, 'imported');
-            assert.strictEqual(numImport.type, 'imported');
+            assert.strictEqual(wordImport.isImported, true);
+            assert.strictEqual(numImport.isImported, true);
             assert.strictEqual(wordImport.importSource, 'common');
             assert.strictEqual(numImport.importSource, 'common');
             assert.strictEqual(numImport.originalName, 'NUMBER');
@@ -256,7 +256,7 @@ unused: "unused"
             `.trim();
 
             const document = createMockDocument(content);
-            await analyzer.analyzeDocument(document);
+            symbolTable = await analyzer.analyze(document);
 
             // Check usage tracking
             const helloRule = symbolTable.resolveSymbol('hello');
@@ -285,7 +285,7 @@ WORD: /\\w+/
             `.trim();
 
             const document = createMockDocument(content);
-            await analyzer.analyzeDocument(document);
+            symbolTable = await analyzer.analyze(document);
 
             // Check that parameterized rule usage is tracked
             const listRule = symbolTable.resolveSymbol('list');
@@ -308,7 +308,7 @@ world: "world"
             `.trim();
 
             const document = createMockDocument(content);
-            await analyzer.analyzeDocument(document);
+            symbolTable = await analyzer.analyze(document);
 
             // Check that rules were parsed correctly despite comments
             const startRule = symbolTable.resolveSymbol('start');
@@ -327,7 +327,7 @@ world: "world"
             const document = createMockDocument(content);
 
             // Should not throw
-            await analyzer.analyzeDocument(document);
+            symbolTable = await analyzer.analyze(document);
 
             // Global scope should still exist
             const globalScope = symbolTable.getGlobalScope();
@@ -344,7 +344,7 @@ world: "world"
             const document = createMockDocument(content);
 
             // Should not throw
-            await analyzer.analyzeDocument(document);
+            symbolTable = await analyzer.analyze(document);
 
             // Should have no symbols
             const allSymbols = symbolTable.getAllSymbols();
@@ -360,14 +360,14 @@ hello: "hello"
             `.trim();
 
             const document = createMockDocument(content);
-            await analyzer.analyzeDocument(document);
+            symbolTable = await analyzer.analyze(document);
 
             // Verify symbols exist
             assert.ok(symbolTable.resolveSymbol('start'), 'start should exist');
             assert.ok(symbolTable.resolveSymbol('hello'), 'hello should exist');
 
-            // Clear document
-            symbolTable.clearDocument(document.uri);
+            // With stateless analyzer, we just create a new symbol table for clearing
+            symbolTable = new LarkSymbolTable();
 
             // Verify symbols are cleared
             assert.strictEqual(symbolTable.resolveSymbol('start'), null, 'start should be cleared');
@@ -381,24 +381,55 @@ hello: "hello"
             `.trim();
 
             const document = createMockDocument(content);
-            await analyzer.analyzeDocument(document);
+            symbolTable = await analyzer.analyze(document);
 
-            // Simulate document changes
-            const changes: vscode.TextDocumentContentChangeEvent[] = [
-                {
-                    range: new vscode.Range(2, 0, 2, 0),
-                    rangeOffset: 0,
-                    rangeLength: 0,
-                    text: 'new_rule: "new"\\n'
-                }
-            ];
+            // Simulate document changes by re-analyzing with updated content
+            const updatedContent = `
+start: hello
+hello: "hello"
+new_rule: "new"
+            `.trim();
 
-            // Should not throw
-            await analyzer.performIncrementalAnalysis(document, changes);
+            const updatedDocument = createMockDocument(updatedContent);
 
-            // For now, incremental analysis does full re-analysis
+            // Should not throw - with stateless analyzer, this is just a re-analysis
+            symbolTable = await analyzer.analyze(updatedDocument);
+
+            // Verify existing symbols still exist and new symbol was added
             assert.ok(symbolTable.resolveSymbol('start'), 'start should still exist');
             assert.ok(symbolTable.resolveSymbol('hello'), 'hello should still exist');
+            assert.ok(symbolTable.resolveSymbol('new_rule'), 'new_rule should exist');
+        });
+    });
+
+    suite('Ignore Directive Tests', () => {
+        test('should not flag symbols used in %ignore as unused', async () => {
+            const content = `
+// A bunch of words
+start: word+
+
+// Allow optional punctuation after each word
+word: WORD ["," | "!"]
+
+// imports WORD from library
+%import _common.WORD
+%import _common.WS_INLINE
+
+// Disregard spaces in text
+%ignore WS_INLINE
+            `.trim();
+
+            const document = createMockDocument(content);
+            symbolTable = await analyzer.analyze(document);
+
+            // Check that WS_INLINE is imported and marked as used (due to %ignore)
+            const wsInline = symbolTable.resolveSymbol('WS_INLINE');
+            assert.ok(wsInline, 'WS_INLINE should be found');
+            assert.strictEqual(wsInline.isUsed, true, 'WS_INLINE should be marked as used due to %ignore directive');
+
+            // Check that it's not in the unused symbols list
+            const unusedSymbols = symbolTable.getUnusedSymbols();
+            assert.ok(!unusedSymbols.includes('WS_INLINE'), 'WS_INLINE should not be in unused symbols');
         });
     });
 });

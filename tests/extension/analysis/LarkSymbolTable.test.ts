@@ -62,7 +62,13 @@ suite('LarkSymbolTable', () => {
             symbolEntry.isUsed = false;
 
             symbolTable.addSymbol(symbolEntry);
-            symbolTable.markSymbolAsUsed('test_rule', symbolTable.getGlobalScope());
+
+            const location: SymbolLocation = {
+                range: new vscode.Range(0, 0, 0, 9),
+                uri: mockDocumentUri
+            };
+
+            symbolTable.markSymbolAsUsed('test_rule', location);
 
             assert.strictEqual(symbolEntry.isUsed, true);
         });
@@ -175,56 +181,29 @@ suite('LarkSymbolTable', () => {
         });
     });
 
-    suite('Document Updates', () => {
-        test('should handle document update', async () => {
-            const mockDocument = createMockTextDocument();
-
-            await symbolTable.updateFromDocument(mockDocument);
-
-            // Should have updated internal state
-            const globalScope = symbolTable.getGlobalScope();
-            assert.strictEqual(globalScope.type, 'global');
-        });
-
-        test('should skip update if document version unchanged', async () => {
-            const mockDocument = createMockTextDocument();
-
-            // First update
-            await symbolTable.updateFromDocument(mockDocument);
-
-            // Add a symbol to verify state
-            const symbolEntry: SymbolTableEntry = createMockSymbolEntry('test', 'rule');
-            symbolTable.addSymbol(symbolEntry);
-
-            // Second update with same document - should not clear symbols
-            await symbolTable.updateFromDocument(mockDocument);
-
-            const resolved = symbolTable.resolveSymbol('test');
-            assert.strictEqual(resolved, symbolEntry);
-        });
-    });
-
     // Helper functions
     function createMockSymbolEntry(name: string, type: 'rule' | 'terminal'): SymbolTableEntry {
         const symbolLocation: SymbolLocation = {
             range: new vscode.Range(0, 0, 0, name.length),
-            document: mockDocumentUri
+            uri: mockDocumentUri
         };
 
         return {
             name,
             type,
-            definition: symbolLocation,
+            location: symbolLocation,
             usages: [],
             scope: symbolTable.getGlobalScope(),
             isUsed: false,
-            isParameterized: false
+            isDefined: true,
+            priority: 0,
+            body: ''
         };
     }
 
     function createMockParameterizedSymbolEntry(name: string, baseName: string): SymbolTableEntry {
         const entry = createMockSymbolEntry(name, 'rule');
-        entry.isParameterized = true;
+        entry.isTemplated = true;
         entry.baseRuleName = baseName;
         return entry;
     }
