@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { TERMINAL_NAME_CHECK_REGEX } from '@/utils/LarkRegexPatterns';
+import { TERMINAL_NAME_CHECK_REGEX } from './LarkRegexPatterns';
 
 /**
  * Utility functions for working with VS Code documents and Lark grammar files

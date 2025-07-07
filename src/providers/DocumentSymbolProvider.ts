@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { LarkDocumentManager } from '@/orchestration/LarkDocumentManager';
+import { LarkDocumentManager } from '../orchestration/LarkDocumentManager';
 
 /**
  * Provides document symbols for Lark grammar files.

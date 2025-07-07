@@ -125,7 +125,7 @@ export class LarkDocumentAnalyzer {
                     document,
                     symbolTable,
                     globalScope,
-                )
+                );
             }
         }
     }
@@ -134,7 +134,7 @@ export class LarkDocumentAnalyzer {
         lines: string[],
         startIndex: number
     ): SymbolDefinition {
-        let currentLine: string = lines[startIndex]
+        let currentLine: string = lines[startIndex];
         let cleanedCurrentLine: string = this.removeComments(currentLine);
 
         if (!this.isSymbolDefinitionLine(cleanedCurrentLine)) {
@@ -603,7 +603,7 @@ export class LarkDocumentAnalyzer {
                             new vscode.Position(startIndex, locationEnd)
                         ),
                         uri: document.uri
-                    }
+                    };
                     symbolTable.markSymbolAsUsed(
                         terminalName,
                         location,
@@ -683,12 +683,14 @@ export class LarkDocumentAnalyzer {
                     body = match ? match[1] : '';
                 }
 
-                while ((match = LarkDocumentAnalyzer.PATTERNS.SYMBOL_REFERENCE.exec(body)) !== null) {
+                // Apply masking before searching for symbol references
+                let maskedBody = this.maskLiterals(body);
+
+                while ((match = LarkDocumentAnalyzer.PATTERNS.SYMBOL_REFERENCE.exec(maskedBody)) !== null) {
                     symbolName = match[1];
                     symbol = symbolTable.resolveSymbol(symbolName, scope);
 
                     if (symbol) {
-                        let maskedBody = this.maskLiterals(body);
                         let escapedBody = this.escapeLiterals(body);
 
                         const locationStart = rawLine.search(escapedBody) + maskedBody.search(symbolName);
@@ -831,7 +833,7 @@ export class LarkDocumentAnalyzer {
             }
         }
 
-        return null
+        return null;
     }
 
     private computeLocation(document: vscode.TextDocument, lines: string[], startIndex: number, endIndex: number, startMatcher: RegExp = /[^\s]/): SymbolLocation {
@@ -862,11 +864,11 @@ export class LarkDocumentAnalyzer {
     }
 
     private maskLiterals(line: string): string {
-        const STRING_LITERAL = /(?:"([^"]*)"([imslux]*))/g
-        const REGEX_LITERAL = /(?:(\/[^\/]+\/)([imslux]*))/g
+        const STRING_LITERAL = /(?:"([^"]*)"([imslux]*))/g;
+        const REGEX_LITERAL = /(?:(\/[^\/]+\/)([imslux]*))/g;
         const mask = (match: string): string => {
             return match.replace(/./g, '*');
-        }
+        };
 
         return line
             .replace(STRING_LITERAL, mask)

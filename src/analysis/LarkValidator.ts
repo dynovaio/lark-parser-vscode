@@ -10,12 +10,12 @@ import {
     PARAMETERIZED_RULE_DEFINITION_REGEX,
     DEFINITION_HEAD_REGEX,
     parseParameters
-} from '@/utils/LarkRegexPatterns';
+} from '../utils/LarkRegexPatterns';
 import {
     shouldSkipLine,
     stripIgnoredContent,
     createSymbolRange
-} from '@/utils/DocumentUtils';
+} from '../utils/DocumentUtils';
 
 /**
  * Validates Lark grammar documents and provides diagnostics

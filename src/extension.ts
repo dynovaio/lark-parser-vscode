@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
-import { LarkSymbolProvider } from '@/providers/DocumentSymbolProvider';
-import { LarkDocumentManager } from '@/orchestration/LarkDocumentManager';
+import { LarkSymbolProvider } from './providers/DocumentSymbolProvider';
+import { LarkDocumentManager } from './orchestration/LarkDocumentManager';
 
 const activate = (context: vscode.ExtensionContext) => {
     const selector = { language: 'lark', scheme: 'file' };
@@ -12,8 +12,8 @@ const activate = (context: vscode.ExtensionContext) => {
     context.subscriptions.push(
         vscode.languages.registerDocumentSymbolProvider(selector, symbolProvider)
     );
-}
+};
 
-const deactivate = () => { }
+const deactivate = () => { };
 
 module.exports = { activate, deactivate };
