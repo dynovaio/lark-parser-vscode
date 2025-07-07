@@ -3,9 +3,7 @@ import { LarkScope } from './LarkScope';
 import type {
     Scope,
     SymbolTableEntry,
-    SymbolType,
     SymbolLocation,
-    ParameterizedRuleUsage,
     ValidationResult,
     ParameterInfo
 } from './types.d';
@@ -209,10 +207,10 @@ export class LarkSymbolTable {
     /**
      * Clears all symbols and scopes
      */
-    private clearSymbolTable(): void {
-        this.globalScope = new LarkScope('global', new vscode.Range(0, 0, 0, 0));
-        this.scopes.clear();
-    }
+    // private clearSymbolTable(): void {
+    //     this.globalScope = new LarkScope('global', new vscode.Range(0, 0, 0, 0));
+    //     this.scopes.clear();
+    // }
 
     /**
      * Gets all symbols from all scopes

@@ -175,7 +175,6 @@ start: undefined_rule
 
             // Should have diagnostics for undefined symbol
             // Note: This test might need adjustment based on current implementation
-            const undefinedDiagnostics = diagnostics.filter(d => d.message.includes('undefined') || d.message.includes('not found'));
             // For now, we'll just check that the validator runs without errors
             assert.ok(Array.isArray(diagnostics), 'should return diagnostics array');
         });

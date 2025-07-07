@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { LarkSymbolTable } from './LarkSymbolTable';
-import type { Scope, SymbolTableEntry } from './types.d';
+import type { Scope } from './types.d';
 import {
     TERMINAL_DEFINITION_REGEX,
     RULE_DEFINITION_REGEX,

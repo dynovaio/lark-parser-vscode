@@ -2,7 +2,6 @@ import * as assert from 'assert';
 import * as vscode from 'vscode';
 import { LarkDocumentAnalyzer } from '../../../src/analysis/LarkDocumentAnalyzer';
 import { LarkSymbolTable } from '../../../src/analysis/LarkSymbolTable';
-import type { SymbolTableEntry } from '../../../src/analysis/types.d';
 
 suite('LarkDocumentAnalyzer', () => {
     let analyzer: LarkDocumentAnalyzer;
@@ -221,7 +220,7 @@ NUMBER: /\\d+/
             const content = `
 %import common.WORD
 %import common.NUMBER -> NUM
-%import json.value as json_value
+%import json.value -> json_value
 
 start: WORD NUM json_value
             `.trim();
@@ -229,20 +228,22 @@ start: WORD NUM json_value
             const document = createMockDocument(content);
             symbolTable = await analyzer.analyze(document);
 
-            // Check that imported symbols were parsed
             const wordImport = symbolTable.resolveSymbol('WORD');
-            const numImport = symbolTable.resolveSymbol('NUM');
-            const jsonImport = symbolTable.resolveSymbol('json_value');
-
             assert.ok(wordImport, 'WORD import should be found');
-            assert.ok(numImport, 'NUM import should be found');
-            // Note: 'as' syntax is not in our current regex, but 'NUM' should be found
-
             assert.strictEqual(wordImport.isImported, true);
-            assert.strictEqual(numImport.isImported, true);
             assert.strictEqual(wordImport.importSource, 'common');
+
+            const numImport = symbolTable.resolveSymbol('NUM');
+            assert.ok(numImport, 'NUM import should be found');
+            assert.strictEqual(numImport.isImported, true);
             assert.strictEqual(numImport.importSource, 'common');
             assert.strictEqual(numImport.originalName, 'NUMBER');
+
+            const jsonImport = symbolTable.resolveSymbol('json_value');
+            assert.ok(jsonImport, 'json_value import should be found');
+            assert.strictEqual(jsonImport.isImported, true);
+            assert.strictEqual(jsonImport.importSource, 'json');
+            assert.strictEqual(jsonImport.originalName, 'value');
         });
     });
 

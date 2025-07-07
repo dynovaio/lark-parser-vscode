@@ -1,7 +1,6 @@
 import * as assert from 'assert';
 import * as vscode from 'vscode';
 import { LarkSymbolTable } from '../../../src/analysis/LarkSymbolTable';
-import { LarkScope } from '../../../src/analysis/LarkScope';
 import type { SymbolTableEntry, SymbolLocation, ParameterInfo } from '../../../src/analysis/types.d';
 
 suite('LarkSymbolTable', () => {
@@ -208,36 +207,4 @@ suite('LarkSymbolTable', () => {
         return entry;
     }
 
-    function createMockTextDocument(): vscode.TextDocument {
-        return {
-            uri: mockDocumentUri,
-            fileName: '/test/mock.lark',
-            isUntitled: false,
-            languageId: 'lark',
-            version: 1,
-            isDirty: false,
-            isClosed: false,
-            lineCount: 10,
-            save: () => Promise.resolve(true),
-            eol: vscode.EndOfLine.LF,
-            encoding: 'utf8',
-            getText: () => '// Mock document content',
-            lineAt: (line: number | vscode.Position) => {
-                const lineNumber = typeof line === 'number' ? line : line.line;
-                return {
-                    lineNumber: lineNumber,
-                    text: '// Mock line content',
-                    range: new vscode.Range(lineNumber, 0, lineNumber, 20),
-                    rangeIncludingLineBreak: new vscode.Range(lineNumber, 0, lineNumber + 1, 0),
-                    firstNonWhitespaceCharacterIndex: 0,
-                    isEmptyOrWhitespace: false
-                };
-            },
-            offsetAt: () => 0,
-            positionAt: () => new vscode.Position(0, 0),
-            getWordRangeAtPosition: () => undefined,
-            validateRange: (range) => range,
-            validatePosition: (position) => position
-        } as vscode.TextDocument;
-    }
 });

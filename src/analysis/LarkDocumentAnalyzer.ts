@@ -226,7 +226,7 @@ export class LarkDocumentAnalyzer {
             symbols = this.processTerminalDefinition(definition, document, scope);
         } else if (this.isRuleDefinitionLine(body)) {
             symbols = this.processRuleDefinition(definition, document, scope);
-        } else if (this.isTemplateRuleDefinitionLine(body)) {
+        } else if (this.isTemplatedRuleDefinitionLine(body)) {
             symbols = this.processTemplateRuleDefinition(definition, document, scope);
         } else if (this.isDeclareLine(body)) {
             symbols = this.processDeclareStatement(definition, document, scope);
@@ -353,7 +353,7 @@ export class LarkDocumentAnalyzer {
             return []; // Not a valid template rule definition
         }
 
-        const [, modifier, name, params, priority, body] = match;
+        const [, modifier, name, , priority, body] = match;
         const location = this.computeLocation(document, definitionLines, startIndex, endIndex);
         const ruleScope = new LarkScope(
             ScopeTypes.RULE,
@@ -404,7 +404,7 @@ export class LarkDocumentAnalyzer {
         document: vscode.TextDocument,
         scope: LarkScope
     ): SymbolTableEntry[] {
-        const { lines: definitionLines, body: definitionBody, startIndex, endIndex } = definition;
+        const { lines: definitionLines, startIndex } = definition;
         const symbols: SymbolTableEntry[] = [];
         let currentIndex = startIndex;
 
@@ -484,7 +484,7 @@ export class LarkDocumentAnalyzer {
 
         const parametersInfo: ParameterInfo[] = [];
         const paramNames = params.split(',').map(param => param.trim()).filter(param => param);
-        const { lines: definitionLines, startIndex, endIndex } = definition;
+        const { lines: definitionLines, startIndex } = definition;
 
         for (let i = 0; i < paramNames.length; i++) {
             const paramName = paramNames[i];
@@ -752,7 +752,7 @@ export class LarkDocumentAnalyzer {
         let match: RegExpMatchArray | null = null;
         let symbolName: string = '';
 
-        if (this.isTemplateRuleDefinitionLine(cleanedCurrentLine)) {
+        if (this.isTemplatedRuleDefinitionLine(cleanedCurrentLine)) {
             match = cleanedCurrentLine.match(LarkDocumentAnalyzer.PATTERNS.TEMPLATE_RULE_DEFINITION);
             symbolName = match ? match[2] : '';
 
@@ -780,7 +780,7 @@ export class LarkDocumentAnalyzer {
             for (let rawLine of definitionLines) {
                 let body = this.removeComments(rawLine);
 
-                if (this.isTemplateRuleDefinitionLine(body)) {
+                if (this.isTemplatedRuleDefinitionLine(body)) {
                     match = body.match(LarkDocumentAnalyzer.PATTERNS.TEMPLATE_RULE_DEFINITION);
                     body = match ? match[5] : '';
                 }
@@ -896,7 +896,7 @@ export class LarkDocumentAnalyzer {
      * @param line The line to check
      * @returns True if the line is a template rule definition
      */
-    private isTemplateRuleDefinitionLine(line: string): boolean {
+    private isTemplatedRuleDefinitionLine(line: string): boolean {
         return LarkDocumentAnalyzer.PATTERNS.TEMPLATE_RULE_DEFINITION.test(line);
     }
 
@@ -1028,7 +1028,7 @@ export class LarkDocumentAnalyzer {
             }
         }
 
-        if (this.isTemplateRuleDefinitionLine(textLine)) {
+        if (this.isTemplatedRuleDefinitionLine(textLine)) {
             let match = textLine.match(LarkDocumentAnalyzer.PATTERNS.TEMPLATE_RULE_DEFINITION) || [];
             let body = match.at(-1)?.trim() || '';
 
