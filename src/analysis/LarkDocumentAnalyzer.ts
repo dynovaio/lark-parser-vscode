@@ -7,15 +7,17 @@ import { LarkScope, ScopeTypes } from './LarkScope';
  * Analyzes Lark grammar documents and populates the symbol table
  */
 export class LarkDocumentAnalyzer {
-    // The analyzer is now stateless and does not hold a symbol table instance.
-
-    // Enhanced regex patterns for better parsing
     private static readonly PATTERNS = {
         // Comments
         COMMENT: /\/\/.*$/,
 
         // Directives
-        // Only allowed: %ignore, %import, %declare, %override, %extend
+        // Only allowed:
+        // 1. %ignore
+        // 2. %import
+        // 3. %declare
+        // 4. %override
+        // 5. %extend
         DIRECTIVE_STATEMENT: /^%(ignore|declare|override|extend|import)\b.*$/,
 
         // Ignore directive:
@@ -27,13 +29,13 @@ export class LarkDocumentAnalyzer {
         DECLARE_STATEMENT: /^%declare\s+(.+)$/,
 
         // Override directive:
-        // %override TERMINAL: new_expression
-        // %override rule_name: new_expression
+        // 1. %override TERMINAL: new_expression
+        // 2.%override rule_name: new_expression
         OVERRIDE_STATEMENT: /^%override\s+(.+)$/,
 
         // Extend directive:
-        // %extend TERMINAL1: new_expression
-        // %extend rule_name: new_expression
+        // 1. %extend TERMINAL1: new_expression
+        // 2. %extend rule_name: new_expression
         EXTEND_STATEMENT: /^%extend\s+(.+)$/,
 
         // Import statements support five Lark formats:
@@ -46,27 +48,33 @@ export class LarkDocumentAnalyzer {
         IMPORT_STATEMENT_SINGLE: /^%import\s+([a-z0-9_.]+)\.([a-zA-Z_][a-zA-Z0-9_]*)\s*(?:->\s*([a-zA-Z_][a-zA-Z0-9_]*))?\s*$/,
         IMPORT_STATEMENT_MULTI: /^%import\s+([a-z0-9_.]+)\s*\(\s*([^)]+)\s*\)\s*$/,
 
-        // Terminal definitions: TERMINAL_NAME: expression (can start with underscore)
+        // Terminal definitions:
+        // 1. TERMINAL_NAME: expression (can start with underscore)
         TERMINAL_DEFINITION: /^([A-Z_][A-Z0-9_]*)(?:\.(\d+))?\s*:\s*(.+)/,
 
-        // Rule definitions: rule_name: expression (can start with underscore)
+        // Rule definitions:
+        // 1. rule_name: expression (can start with underscore)
         RULE_DEFINITION: /^([?!])?([a-z_][a-z0-9_]*)(?:\.(\d+))?\s*:\s*(.+)/,
 
-        // Parameterized rules: rule_name{param1, param2}: expression (can start with underscore)
+        // Parameterized rules:
+        // 1. rule_name{param1, param2}: expression (can start with underscore)
         TEMPLATE_RULE_DEFINITION: /^([?!])?([a-z_][a-z0-9_]*)\s*\{\s*([^}]+)\}(?:\.(\d+))?\s*:\s*(.+)/,
 
         // Alias statement
+        // 1. expression -> alias_name
         ALIAS_DEFINITION: /^(.*)\s*->\s*([a-z_][a-z0-9_]*|[A-Z_][A-Z0-9_]*)\s*$/,
 
         // Symbol references in rule bodies (can start with underscore)
+        // 1. TERMINAL_REFERENCE: /\b([A-Z_][A-Z0-9_]*)\b/
+        // 2. RULE_REFERENCE: /\b([a-z_][a-z0-9_]*)\b/
+        // 3. SYMBOL_REFERENCE: /\b([a-z_][a-z0-9_]*|[A-Z_][A-Z0-9_]*)\b/g
+        SYMBOL_REFERENCE: /\b([a-z_][a-z0-9_]*|[A-Z_][A-Z0-9_]*)\b/g,
         TERMINAL_REFERENCE: /\b([A-Z_][A-Z0-9_]*)\b/,
         RULE_REFERENCE: /\b([a-z_][a-z0-9_]*)\b/,
-        SYMBOL_REFERENCE: /\b([a-z_][a-z0-9_]*|[A-Z_][A-Z0-9_]*)\b/g,
-
-        // Parameterized rule calls: rule_name{arg1, arg2} (can start with underscore)
         PARAMETERIZED_RULE_REFERENCE: /\b([a-z_][a-z0-9_]*)\s*\{\s*([^}]+)\}\b/g,
 
         // Continuation line reference
+        // 1. | expression
         CONTINUATION_LINE_REFERENCE: /^\|\s*(.*)/
     };
 
@@ -78,13 +86,9 @@ export class LarkDocumentAnalyzer {
      */
     public async analyze(document: vscode.TextDocument): Promise<LarkSymbolTable> {
         const symbolTable = new LarkSymbolTable();
-        // The document context is no longer stored in the symbol table.
-        // symbolTable.setDocumentContext(document.uri, document.version);
-
         const text = document.getText();
         const lines = text.split('\n');
 
-        // The analysis process is now a pipeline that populates the new symbol table.
         await this.collectSymbolDefinitions(document, lines, symbolTable);
         await this.collectSymbolUsages(document, lines, symbolTable);
 
@@ -100,6 +104,14 @@ export class LarkDocumentAnalyzer {
     // - Directives (import, declare, override, extend)
     // ---------------------------------------------------------------------- //
 
+    /**
+     * Collects all symbol definitions from the document in the first pass.
+     * This includes terminals, rules, parameterized rules, and directives.
+     * @param document The VS Code document being analyzed
+     * @param lines Array of lines from the document
+     * @param symbolTable The symbol table to populate with definitions
+     * @returns Promise that resolves when all symbol definitions are collected
+     */
     private async collectSymbolDefinitions(
         document: vscode.TextDocument,
         lines: string[],
@@ -112,13 +124,13 @@ export class LarkDocumentAnalyzer {
             const cleanedCurrentLine = this.removeComments(currentLine);
 
             if (!cleanedCurrentLine) {
-                continue; // Skip empty lines
+                continue;
             }
 
             const definition = this.readSymbolDefinition(lines, lineNumber);
 
             if (definition.body !== '') {
-                lineNumber = lineNumber + definition.endIndex - definition.startIndex; // Adjust line number
+                lineNumber = lineNumber + definition.endIndex - definition.startIndex;
 
                 this.processSymbolDefinition(
                     definition,
@@ -130,6 +142,13 @@ export class LarkDocumentAnalyzer {
         }
     }
 
+    /**
+     * Reads a complete symbol definition from the document, handling multi-line definitions.
+     * Collects all lines that belong to a single symbol definition, including continuation lines.
+     * @param lines Array of all lines in the document
+     * @param startIndex The starting line index to read from
+     * @returns A SymbolDefinition object containing the collected lines and metadata
+     */
     private readSymbolDefinition(
         lines: string[],
         startIndex: number
@@ -184,6 +203,15 @@ export class LarkDocumentAnalyzer {
         };
     }
 
+    /**
+     * Processes a symbol definition and creates appropriate symbol table entries.
+     * Determines the type of definition (terminal, rule, template rule, directive) and
+     * delegates to the appropriate processing method.
+     * @param definition The symbol definition to process
+     * @param document The VS Code document being analyzed
+     * @param symbolTable The symbol table to add symbols to
+     * @param scope The scope in which to add the symbols
+     */
     private processSymbolDefinition(
         definition: SymbolDefinition,
         document: vscode.TextDocument,
@@ -211,6 +239,15 @@ export class LarkDocumentAnalyzer {
         }
     }
 
+    /**
+     * Processes a terminal definition and creates a terminal symbol table entry.
+     * Handles terminal definitions like "TERMINAL_NAME: expression" and extracts
+     * priority information if present.
+     * @param definition The terminal definition to process
+     * @param document The VS Code document being analyzed
+     * @param scope The scope in which to add the terminal symbol
+     * @returns Array of symbol table entries created from the definition
+     */
     private processTerminalDefinition(
         definition: SymbolDefinition,
         document: vscode.TextDocument,
@@ -248,6 +285,15 @@ export class LarkDocumentAnalyzer {
         ];
     }
 
+    /**
+     * Processes a rule definition and creates a rule symbol table entry.
+     * Handles rule definitions like "rule_name: expression" and extracts
+     * modifiers (!, ?) and priority information if present.
+     * @param definition The rule definition to process
+     * @param document The VS Code document being analyzed
+     * @param scope The scope in which to add the rule symbol
+     * @returns Array of symbol table entries created from the definition
+     */
     private processRuleDefinition(
         definition: SymbolDefinition,
         document: vscode.TextDocument,
@@ -286,6 +332,15 @@ export class LarkDocumentAnalyzer {
         ];
     }
 
+    /**
+     * Processes a template (parameterized) rule definition and creates a template rule symbol table entry.
+     * Handles template rules like "rule_name{param1, param2}: expression" and creates
+     * a new rule scope for the parameters.
+     * @param definition The template rule definition to process
+     * @param document The VS Code document being analyzed
+     * @param scope The scope in which to add the template rule symbol
+     * @returns Array of symbol table entries created from the definition
+     */
     private processTemplateRuleDefinition(
         definition: SymbolDefinition,
         document: vscode.TextDocument,
@@ -335,6 +390,15 @@ export class LarkDocumentAnalyzer {
         ];
     }
 
+    /**
+     * Processes alias definitions within a symbol definition.
+     * Handles alias statements like "expression -> alias_name" that can appear
+     * within rule or terminal definitions.
+     * @param definition The symbol definition that may contain aliases
+     * @param document The VS Code document being analyzed
+     * @param scope The scope in which to add the alias symbols
+     * @returns Array of alias symbol table entries found within the definition
+     */
     private processAliasWithinSymbolDefinition(
         definition: SymbolDefinition,
         document: vscode.TextDocument,
@@ -391,6 +455,15 @@ export class LarkDocumentAnalyzer {
         return symbols;
     }
 
+    /**
+     * Processes the parameters of a template rule definition.
+     * Extracts parameter names and their positions from template rule definitions
+     * like "rule_name{param1, param2}: expression".
+     * @param definition The template rule definition containing parameters
+     * @param document The VS Code document being analyzed
+     * @param scope The rule scope to add parameters to
+     * @returns Array of parameter information objects
+     */
     private processTemplateRuleParameters(
         definition: SymbolDefinition,
         document: vscode.TextDocument,
@@ -429,6 +502,15 @@ export class LarkDocumentAnalyzer {
         return parametersInfo;
     }
 
+    /**
+     * Processes a declare statement and creates declared symbol table entries.
+     * Handles declare statements like "%declare TERMINAL1 TERMINAL2" which declare
+     * terminals without providing their definitions.
+     * @param definition The declare statement definition to process
+     * @param document The VS Code document being analyzed
+     * @param scope The scope in which to add the declared symbols
+     * @returns Array of declared symbol table entries
+     */
     private processDeclareStatement(
         definition: SymbolDefinition,
         document: vscode.TextDocument,
@@ -469,6 +551,15 @@ export class LarkDocumentAnalyzer {
         return symbols;
     }
 
+    /**
+     * Processes an import statement and creates imported symbol table entries.
+     * Handles both single imports ("%import module.symbol") and multi-imports
+     * ("%import module (symbol1, symbol2)") with optional aliasing.
+     * @param definition The import statement definition to process
+     * @param document The VS Code document being analyzed
+     * @param scope The scope in which to add the imported symbols
+     * @returns Array of imported symbol table entries
+     */
     private processImportStatement(
         definition: SymbolDefinition,
         document: vscode.TextDocument,
@@ -555,6 +646,16 @@ export class LarkDocumentAnalyzer {
     // - Parameterized rule references
     // - Directive (ignore)
     // ---------------------------------------------------------------------- //
+
+    /**
+     * Collects all symbol usages from the document in the second pass.
+     * This includes references to terminals, rules, and parameterized rules within
+     * rule bodies, as well as symbols used in directives like %ignore.
+     * @param document The VS Code document being analyzed
+     * @param lines Array of lines from the document
+     * @param symbolTable The symbol table to mark symbol usages in
+     * @returns Promise that resolves when all symbol usages are collected
+     */
     private async collectSymbolUsages(
         document: vscode.TextDocument,
         lines: string[],
@@ -584,6 +685,16 @@ export class LarkDocumentAnalyzer {
         }
     }
 
+    /**
+     * Processes symbol usages within directive statements.
+     * Currently handles %ignore directives which mark symbols as both used and ignored.
+     * @param lines Array of all lines in the document
+     * @param startIndex The starting line index of the directive
+     * @param document The VS Code document being analyzed
+     * @param symbolTable The symbol table to mark symbol usages in
+     * @param scope The scope to search for symbols in
+     * @returns Promise resolving to the number of lines processed
+     */
     private async processSymbolUsagesWithinDirectives(lines: string[], startIndex: number, document: vscode.TextDocument, symbolTable: LarkSymbolTable, scope: LarkScope): Promise<number> {
         const currentLine = lines[startIndex];
         const cleanedCurrentLine = this.removeComments(currentLine);
@@ -622,6 +733,17 @@ export class LarkDocumentAnalyzer {
         return 1;
     }
 
+    /**
+     * Processes symbol usages within symbol definition bodies.
+     * Extracts and marks all symbol references found in rule bodies, terminal definitions,
+     * and template rule definitions while avoiding false positives in string literals.
+     * @param lines Array of all lines in the document
+     * @param startIndex The starting line index of the symbol definition
+     * @param document The VS Code document being analyzed
+     * @param symbolTable The symbol table to mark symbol usages in
+     * @param scope The scope to search for symbols in
+     * @returns Promise resolving to the number of lines processed
+     */
     private async processSymbolUsagesWithinSymbolDefinitions(lines: string[], startIndex: number, document: vscode.TextDocument, symbolTable: LarkSymbolTable, scope: LarkScope): Promise<number> {
         const currentLine: string = lines[startIndex];
         const cleanedCurrentLine: string = this.removeComments(currentLine);
@@ -721,14 +843,22 @@ export class LarkDocumentAnalyzer {
     // ---------------------------------------------------------------------- //
     // Utility methods
     // ---------------------------------------------------------------------- //
+
+    /**
+     * Removes comments from a line of text.
+     * Strips everything after "//" comment markers and trims whitespace.
+     * @param text The text to remove comments from
+     * @returns The text with comments removed and trimmed
+     */
     private removeComments(text: string): string {
         return text.replace(LarkDocumentAnalyzer.PATTERNS.COMMENT, '').trim();
     }
 
     /**
      * Check if a line is a symbol definition line.
-     * @param {string} line - Line of text to  clean of comments and trimmed.
-     * @returns {boolean} True if the line is a symbol definition line, false otherwise
+     * Identifies terminal definitions, rule definitions, template rules, and directives.
+     * @param line Line of text to check (should be clean of comments and trimmed)
+     * @returns True if the line is a symbol definition line, false otherwise
      */
     private isSymbolDefinitionLine(line: string): boolean {
         return LarkDocumentAnalyzer.PATTERNS.TERMINAL_DEFINITION.test(line) ||
@@ -740,58 +870,143 @@ export class LarkDocumentAnalyzer {
             this.isExtendLine(line);
     }
 
+    /**
+     * Checks if a line is a terminal definition.
+     * Matches patterns like "TERMINAL_NAME: expression".
+     * @param line The line to check
+     * @returns True if the line is a terminal definition
+     */
     private isTerminalDefinitionLine(line: string): boolean {
         return LarkDocumentAnalyzer.PATTERNS.TERMINAL_DEFINITION.test(line);
     }
 
+    /**
+     * Checks if a line is a rule definition.
+     * Matches patterns like "rule_name: expression" with optional modifiers.
+     * @param line The line to check
+     * @returns True if the line is a rule definition
+     */
     private isRuleDefinitionLine(line: string): boolean {
         return LarkDocumentAnalyzer.PATTERNS.RULE_DEFINITION.test(line);
     }
 
+    /**
+     * Checks if a line is a template (parameterized) rule definition.
+     * Matches patterns like "rule_name{param1, param2}: expression".
+     * @param line The line to check
+     * @returns True if the line is a template rule definition
+     */
     private isTemplateRuleDefinitionLine(line: string): boolean {
         return LarkDocumentAnalyzer.PATTERNS.TEMPLATE_RULE_DEFINITION.test(line);
     }
 
+    /**
+     * Checks if a line is an alias definition.
+     * Matches patterns like "expression -> alias_name".
+     * @param line The line to check
+     * @returns True if the line is an alias definition
+     */
     private isAliasDefinitionLine(line: string): boolean {
         return LarkDocumentAnalyzer.PATTERNS.ALIAS_DEFINITION.test(line);
     }
 
+    /**
+     * Checks if a line is a directive statement.
+     * Matches patterns like "%ignore", "%import", "%declare", etc.
+     * @param line The line to check
+     * @returns True if the line is a directive statement
+     */
     private isDirectiveLine(line: string): boolean {
         return LarkDocumentAnalyzer.PATTERNS.DIRECTIVE_STATEMENT.test(line);
     }
 
+    /**
+     * Checks if a line is an ignore directive.
+     * Matches patterns like "%ignore TERMINAL".
+     * @param line The line to check
+     * @returns True if the line is an ignore directive
+     */
     private isIgnoreLine(line: string): boolean {
         return LarkDocumentAnalyzer.PATTERNS.IGNORE_STATEMENT.test(line);
     }
 
+    /**
+     * Checks if a line is a declare directive.
+     * Matches patterns like "%declare TERMINAL1 TERMINAL2".
+     * @param line The line to check
+     * @returns True if the line is a declare directive
+     */
     private isDeclareLine(line: string): boolean {
         return LarkDocumentAnalyzer.PATTERNS.DECLARE_STATEMENT.test(line);
     }
 
+    /**
+     * Checks if a line is an override directive.
+     * Matches patterns like "%override symbol: expression".
+     * @param line The line to check
+     * @returns True if the line is an override directive
+     */
     private isOverrideLine(line: string): boolean {
         return LarkDocumentAnalyzer.PATTERNS.OVERRIDE_STATEMENT.test(line);
     }
 
+    /**
+     * Checks if a line is an extend directive.
+     * Matches patterns like "%extend symbol: expression".
+     * @param line The line to check
+     * @returns True if the line is an extend directive
+     */
     private isExtendLine(line: string): boolean {
         return LarkDocumentAnalyzer.PATTERNS.EXTEND_STATEMENT.test(line);
     }
 
+    /**
+     * Checks if a line is an import directive.
+     * Matches patterns like "%import module.symbol" or "%import module (symbols)".
+     * @param line The line to check
+     * @returns True if the line is an import directive
+     */
     private isImportLine(line: string): boolean {
         return LarkDocumentAnalyzer.PATTERNS.IMPORT_STATEMENT.test(line);
     }
 
+    /**
+     * Checks if a line is a continuation line.
+     * Matches patterns like "| expression" which continue the previous rule.
+     * @param line The line to check
+     * @returns True if the line is a continuation line
+     */
     private isContinuationLine(line: string): boolean {
         return LarkDocumentAnalyzer.PATTERNS.CONTINUATION_LINE_REFERENCE.test(line);
     }
 
+    /**
+     * Checks if a symbol name is a terminal.
+     * Terminals are uppercase identifiers that can start with underscore.
+     * @param name The symbol name to check
+     * @returns True if the name is a terminal
+     */
     private isTerminal(name: string): boolean {
         return LarkDocumentAnalyzer.PATTERNS.TERMINAL_REFERENCE.test(name);
     }
 
+    /**
+     * Checks if a symbol name is a rule.
+     * Rules are lowercase identifiers that can start with underscore.
+     * @param name The symbol name to check
+     * @returns True if the name is a rule
+     */
     private isRule(name: string): boolean {
         return LarkDocumentAnalyzer.PATTERNS.RULE_REFERENCE.test(name);
     }
 
+    /**
+     * Extracts alias definition statements from various types of definition lines.
+     * Looks for alias patterns like "expression -> alias_name" within terminal,
+     * rule, template rule, and continuation line definitions.
+     * @param textLine The line to extract alias definitions from
+     * @returns The extracted alias statement or null if none found
+     */
     private extractAliasDefinitionStatement(textLine: string): string | null {
         if (this.isTerminalDefinitionLine(textLine)) {
             let match = textLine.match(LarkDocumentAnalyzer.PATTERNS.TERMINAL_DEFINITION) || [];
@@ -836,6 +1051,16 @@ export class LarkDocumentAnalyzer {
         return null;
     }
 
+    /**
+     * Computes the location (range and URI) of a symbol definition in the document.
+     * Creates a VS Code Range object spanning from the start to end of the definition.
+     * @param document The VS Code document containing the symbol
+     * @param lines The lines that make up the symbol definition
+     * @param startIndex The starting line index in the document
+     * @param endIndex The ending line index in the document
+     * @param startMatcher Optional regex to find the actual start position within the first line
+     * @returns A SymbolLocation object with range and URI information
+     */
     private computeLocation(document: vscode.TextDocument, lines: string[], startIndex: number, endIndex: number, startMatcher: RegExp = /[^\s]/): SymbolLocation {
         const startLine = lines[0];
         const endLine = lines[lines.length - 1];
@@ -849,6 +1074,12 @@ export class LarkDocumentAnalyzer {
         };
     }
 
+    /**
+     * Determines the symbol type (terminal, rule, or unknown) based on the symbol name.
+     * Uses naming conventions where uppercase names are terminals and lowercase names are rules.
+     * @param name The symbol name to analyze
+     * @returns The computed symbol type
+     */
     private computeSymbolType(name: string): SymbolType {
         let computedSymbolType: SymbolType = SymbolTypes.UNKNOWN;
 
@@ -863,6 +1094,13 @@ export class LarkDocumentAnalyzer {
         return computedSymbolType;
     }
 
+    /**
+     * Masks string and regex literals in a line to prevent false positive symbol matches.
+     * Replaces characters within string literals ("...") and regex literals (/.../) with asterisks
+     * to avoid matching symbol names that appear within literal values.
+     * @param line The line to mask literals in
+     * @returns The line with literals masked as asterisks
+     */
     private maskLiterals(line: string): string {
         const STRING_LITERAL = /(?:"([^"]*)"([imslux]*))/g;
         const REGEX_LITERAL = /(?:(\/[^\/]+\/)([imslux]*))/g;
@@ -875,6 +1113,12 @@ export class LarkDocumentAnalyzer {
             .replace(REGEX_LITERAL, mask);
     }
 
+    /**
+     * Escapes special regex characters in a string for safe use in regular expressions.
+     * Adds backslashes before characters that have special meaning in regex patterns.
+     * @param line The string to escape
+     * @returns The escaped string safe for regex usage
+     */
     private escapeLiterals(line: string): string {
         return line.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&');
     }
