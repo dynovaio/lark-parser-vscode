@@ -711,43 +711,51 @@ export class LarkDocumentAnalyzer {
         const cleanedCurrentLine = this.removeComments(currentLine);
 
         if (this.isIgnoreLine(cleanedCurrentLine)) {
-            const match = cleanedCurrentLine.match(LarkDocumentAnalyzer.PATTERNS.IGNORE_STATEMENT);
+            const maskedCurrentLine = this.maskLiterals(cleanedCurrentLine);
+            const match = maskedCurrentLine.match(LarkDocumentAnalyzer.PATTERNS.IGNORE_STATEMENT);
 
-            if (match) {
-                const [, terminalName] = match;
-                const locationStart = currentLine.search(this.escapeLiterals(terminalName));
-                const locationEnd = locationStart + terminalName.length;
-                const location = {
-                    range: new vscode.Range(
-                        new vscode.Position(startIndex, locationStart),
-                        new vscode.Position(startIndex, locationEnd)
-                    ),
-                    uri: document.uri
-                };
-                const symbol = symbolTable.resolveSymbol(terminalName, scope);
-                if (symbol) {
-                    symbolTable.markSymbolAsUsed(
-                        terminalName,
-                        location,
-                        scope
-                    );
-                    symbolTable.markSymbolAsIgnored(
-                        terminalName,
-                        location,
-                        scope
-                    );
-                } else {
-                    this.handleUndefinedSymbol(
-                        terminalName,
-                        location,
-                        scope,
-                        undefinedSymbolTable,
-                        {
-                            isIgnored: true,
-                            ignoreLocations: [location],
-                        }
-                    );
-                }
+            if (!match) {
+                return 1; // Not a valid ignore statement
+            }
+
+            const [, terminalName] = match;
+
+            if (!terminalName.match(LarkDocumentAnalyzer.PATTERNS.SYMBOL_REFERENCE)) {
+                return 1; // Not a valid symbol reference
+            }
+
+            const locationStart = currentLine.search(this.escapeLiterals(terminalName));
+            const locationEnd = locationStart + terminalName.length;
+            const location = {
+                range: new vscode.Range(
+                    new vscode.Position(startIndex, locationStart),
+                    new vscode.Position(startIndex, locationEnd)
+                ),
+                uri: document.uri
+            };
+            const symbol = symbolTable.resolveSymbol(terminalName, scope);
+            if (symbol) {
+                symbolTable.markSymbolAsUsed(
+                    terminalName,
+                    location,
+                    scope
+                );
+                symbolTable.markSymbolAsIgnored(
+                    terminalName,
+                    location,
+                    scope
+                );
+            } else {
+                this.handleUndefinedSymbol(
+                    terminalName,
+                    location,
+                    scope,
+                    undefinedSymbolTable,
+                    {
+                        isIgnored: true,
+                        ignoreLocations: [location],
+                    }
+                );
             }
         }
 
@@ -770,7 +778,8 @@ export class LarkDocumentAnalyzer {
         const currentLine: string = lines[startIndex];
         const cleanedCurrentLine: string = this.removeComments(currentLine);
 
-        let symbol: SymbolTableEntry | null = null;
+        let definedSymbol: SymbolTableEntry | null = null;
+        let usedSymbol: SymbolTableEntry | null = null;
         let match: RegExpMatchArray | null = null;
         let symbolName: string = '';
 
@@ -778,28 +787,30 @@ export class LarkDocumentAnalyzer {
             match = cleanedCurrentLine.match(LarkDocumentAnalyzer.PATTERNS.TEMPLATE_RULE_DEFINITION);
             symbolName = match ? match[2] : '';
 
-            symbol = symbolTable.resolveSymbol(symbolName, scope);
+            definedSymbol = symbolTable.resolveSymbol(symbolName, scope);
         }
 
         if (this.isRuleDefinitionLine(cleanedCurrentLine)) {
             match = cleanedCurrentLine.match(LarkDocumentAnalyzer.PATTERNS.RULE_DEFINITION);
             symbolName = match ? match[2] : '';
 
-            symbol = symbolTable.resolveSymbol(symbolName, scope);
+            definedSymbol = symbolTable.resolveSymbol(symbolName, scope);
         }
 
         if (this.isTerminalDefinitionLine(cleanedCurrentLine)) {
             match = cleanedCurrentLine.match(LarkDocumentAnalyzer.PATTERNS.TERMINAL_DEFINITION);
             symbolName = match ? match[1] : '';
 
-            symbol = symbolTable.resolveSymbol(symbolName, scope);
+            definedSymbol = symbolTable.resolveSymbol(symbolName, scope);
         }
 
-        if (symbol) {
-            const startLineIndex = symbol.location.range.start.line;
-            const endLineIndex = symbol.location.range.end.line;
+        if (definedSymbol) {
+            const startLineIndex = definedSymbol.location.range.start.line;
+            const endLineIndex = definedSymbol.location.range.end.line;
             const definitionLines = lines.slice(startLineIndex, endLineIndex + 1);
             for (let rawLine of definitionLines) {
+                console.log("Raw line:", rawLine);
+
                 let body = this.removeComments(rawLine);
 
                 if (this.isTemplateRuleDefinitionLine(body)) {
@@ -831,9 +842,9 @@ export class LarkDocumentAnalyzer {
                 let maskedBody = this.maskLiterals(body);
 
                 while ((match = LarkDocumentAnalyzer.PATTERNS.SYMBOL_REFERENCE.exec(maskedBody)) !== null) {
+                    console.log("Match found:", match);
                     symbolName = match[1];
-                    symbol = symbolTable.resolveSymbol(symbolName, scope);
-
+                    usedSymbol = symbolTable.resolveSymbol(symbolName, scope);
 
                     const escapedBody = this.escapeLiterals(body);
                     const locationStart = rawLine.search(escapedBody) + maskedBody.search(this.escapeLiterals(symbolName));
@@ -847,19 +858,26 @@ export class LarkDocumentAnalyzer {
                         uri: document.uri
                     };
 
-                    if (symbol) {
+                    if (usedSymbol) {
                         symbolTable.markSymbolAsUsed(
                             symbolName,
                             location,
                             scope
                         );
                     } else {
-                        this.handleUndefinedSymbol(
-                            symbolName,
-                            location,
-                            scope,
-                            undefinedSymbolTable
-                        );
+                        if (definedSymbol.isTemplate) {
+                            const parameterInfo = definedSymbol.parameters?.find(param => param.name === symbolName);
+                            if (parameterInfo) {
+                                continue; // Skip parameters, they are not undefined symbols
+                            }
+                        } else {
+                            this.handleUndefinedSymbol(
+                                symbolName,
+                                location,
+                                scope,
+                                undefinedSymbolTable
+                            );
+                        }
                     }
                 }
             }

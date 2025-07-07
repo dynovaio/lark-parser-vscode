@@ -23,7 +23,6 @@ export class LarkValidator {
             return [];
         }
 
-        // The validator no longer updates the symbol table. It consumes it.
         const allDiagnostics = [
             ...this.detectUnusedSymbols(analysisResult),
             ...this.detectUndefinedSymbols(analysisResult)
