@@ -85,7 +85,7 @@ export interface SymbolTableEntry {
     scope: Scope;
 
     // For parameterized rules
-    isTemplated?: boolean;
+    isTemplate?: boolean;
     baseRuleName?: string;
     parameters?: ParameterInfo[];
 

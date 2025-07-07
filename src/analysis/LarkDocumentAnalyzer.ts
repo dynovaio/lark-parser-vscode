@@ -226,7 +226,7 @@ export class LarkDocumentAnalyzer {
             symbols = this.processTerminalDefinition(definition, document, scope);
         } else if (this.isRuleDefinitionLine(body)) {
             symbols = this.processRuleDefinition(definition, document, scope);
-        } else if (this.isTemplatedRuleDefinitionLine(body)) {
+        } else if (this.isTemplateRuleDefinitionLine(body)) {
             symbols = this.processTemplateRuleDefinition(definition, document, scope);
         } else if (this.isDeclareLine(body)) {
             symbols = this.processDeclareStatement(definition, document, scope);
@@ -375,7 +375,7 @@ export class LarkDocumentAnalyzer {
             usages: [],
             isUsed: false,
 
-            isTemplated: true,
+            isTemplate: true,
             baseRuleName: name,
             parameters: this.processTemplateRuleParameters(definition, document, ruleScope),
 
@@ -752,7 +752,7 @@ export class LarkDocumentAnalyzer {
         let match: RegExpMatchArray | null = null;
         let symbolName: string = '';
 
-        if (this.isTemplatedRuleDefinitionLine(cleanedCurrentLine)) {
+        if (this.isTemplateRuleDefinitionLine(cleanedCurrentLine)) {
             match = cleanedCurrentLine.match(LarkDocumentAnalyzer.PATTERNS.TEMPLATE_RULE_DEFINITION);
             symbolName = match ? match[2] : '';
 
@@ -780,7 +780,7 @@ export class LarkDocumentAnalyzer {
             for (let rawLine of definitionLines) {
                 let body = this.removeComments(rawLine);
 
-                if (this.isTemplatedRuleDefinitionLine(body)) {
+                if (this.isTemplateRuleDefinitionLine(body)) {
                     match = body.match(LarkDocumentAnalyzer.PATTERNS.TEMPLATE_RULE_DEFINITION);
                     body = match ? match[5] : '';
                 }
@@ -896,7 +896,7 @@ export class LarkDocumentAnalyzer {
      * @param line The line to check
      * @returns True if the line is a template rule definition
      */
-    private isTemplatedRuleDefinitionLine(line: string): boolean {
+    private isTemplateRuleDefinitionLine(line: string): boolean {
         return LarkDocumentAnalyzer.PATTERNS.TEMPLATE_RULE_DEFINITION.test(line);
     }
 
@@ -1028,7 +1028,7 @@ export class LarkDocumentAnalyzer {
             }
         }
 
-        if (this.isTemplatedRuleDefinitionLine(textLine)) {
+        if (this.isTemplateRuleDefinitionLine(textLine)) {
             let match = textLine.match(LarkDocumentAnalyzer.PATTERNS.TEMPLATE_RULE_DEFINITION) || [];
             let body = match.at(-1)?.trim() || '';
 

@@ -169,7 +169,7 @@ WORD: /\\w+/
 
             assert.ok(listRule, 'list rule should be found');
             assert.strictEqual(listRule.type, 'rule');
-            assert.strictEqual(listRule.isTemplated, true);
+            assert.strictEqual(listRule.isTemplate, true);
             assert.strictEqual(listRule.baseRuleName, 'list');
             assert.ok(listRule.parameters, 'parameters should be defined');
             assert.strictEqual(listRule.parameters.length, 1);

@@ -233,7 +233,7 @@ another_unused: WORD "unused"
         // Check parameterized rules
         const listRule = symbolTable.resolveSymbol('list');
         assert.ok(listRule, 'list rule should be found');
-        assert.strictEqual(listRule.isTemplated, true);
+        assert.strictEqual(listRule.isTemplate, true);
         assert.ok(listRule.parameters, 'list should have parameters');
         assert.strictEqual(listRule.parameters.length, 1);
         assert.strictEqual(listRule.parameters[0].name, 'item');

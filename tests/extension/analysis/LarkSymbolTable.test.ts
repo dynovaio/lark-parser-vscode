@@ -202,7 +202,7 @@ suite('LarkSymbolTable', () => {
 
     function createMockParameterizedSymbolEntry(name: string, baseName: string): SymbolTableEntry {
         const entry = createMockSymbolEntry(name, 'rule');
-        entry.isTemplated = true;
+        entry.isTemplate = true;
         entry.baseRuleName = baseName;
         return entry;
     }
