@@ -56,7 +56,7 @@ export class LarkDocumentAnalyzer {
         // 1. rule_name: expression (can start with underscore)
         RULE_DEFINITION: /^([?!])?([a-z_][a-z0-9_]*)(?:\.(\d+))?\s*:\s*(.+)/,
 
-        // Parameterized rules:
+        // Template rules:
         // 1. rule_name{param1, param2}: expression (can start with underscore)
         TEMPLATE_RULE_DEFINITION: /^([?!])?([a-z_][a-z0-9_]*)\s*\{\s*([^}]+)\}(?:\.(\d+))?\s*:\s*(.+)/,
 
@@ -71,7 +71,7 @@ export class LarkDocumentAnalyzer {
         SYMBOL_REFERENCE: /\b([a-z_][a-z0-9_]*|[A-Z_][A-Z0-9_]*)\b/g,
         TERMINAL_REFERENCE: /\b([A-Z_][A-Z0-9_]*)\b/,
         RULE_REFERENCE: /\b([a-z_][a-z0-9_]*)\b/,
-        PARAMETERIZED_RULE_REFERENCE: /\b([a-z_][a-z0-9_]*)\s*\{\s*([^}]+)\}\b/g,
+        TEMPLATE_RULE_REFERENCE: /\b([a-z_][a-z0-9_]*)\s*\{\s*([^}]+)\}\b/g,
 
         // Continuation line reference
         // 1. | expression
@@ -100,13 +100,13 @@ export class LarkDocumentAnalyzer {
     // Collect symbol definitions
     // - Terminal definitions
     // - Rule definitions
-    // - Parameterized rule definitions
+    // - Template rule definitions
     // - Directives (import, declare, override, extend)
     // ---------------------------------------------------------------------- //
 
     /**
      * Collects all symbol definitions from the document in the first pass.
-     * This includes terminals, rules, parameterized rules, and directives.
+     * This includes terminals, rules, template rules, and directives.
      * @param document The VS Code document being analyzed
      * @param lines Array of lines from the document
      * @param symbolTable The symbol table to populate with definitions
@@ -333,7 +333,7 @@ export class LarkDocumentAnalyzer {
     }
 
     /**
-     * Processes a template (parameterized) rule definition and creates a template rule symbol table entry.
+     * Processes a template (template) rule definition and creates a template rule symbol table entry.
      * Handles template rules like "rule_name{param1, param2}: expression" and creates
      * a new rule scope for the parameters.
      * @param definition The template rule definition to process
@@ -643,13 +643,13 @@ export class LarkDocumentAnalyzer {
     // Collect symbol references in rule bodies
     // - Terminal references
     // - Rule references
-    // - Parameterized rule references
+    // - Template rule references
     // - Directive (ignore)
     // ---------------------------------------------------------------------- //
 
     /**
      * Collects all symbol usages from the document in the second pass.
-     * This includes references to terminals, rules, and parameterized rules within
+     * This includes references to terminals, rules, and template rules within
      * rule bodies, as well as symbols used in directives like %ignore.
      * @param document The VS Code document being analyzed
      * @param lines Array of lines from the document
@@ -891,7 +891,7 @@ export class LarkDocumentAnalyzer {
     }
 
     /**
-     * Checks if a line is a template (parameterized) rule definition.
+     * Checks if a line is a template (template) rule definition.
      * Matches patterns like "rule_name{param1, param2}: expression".
      * @param line The line to check
      * @returns True if the line is a template rule definition

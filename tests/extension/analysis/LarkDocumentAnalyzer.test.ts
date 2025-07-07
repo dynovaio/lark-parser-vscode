@@ -154,7 +154,7 @@ WORLD: "world"
             assert.strictEqual(worldTerminal.type, 'terminal');
         });
 
-        test('should parse parameterized rules', async () => {
+        test('should parse template rules', async () => {
             const content = `
 list{item}: item ("," item)*
 item: WORD
@@ -164,7 +164,7 @@ WORD: /\\w+/
             const document = createMockDocument(content);
             symbolTable = await analyzer.analyze(document);
 
-            // Check that parameterized rule was parsed
+            // Check that template rule was parsed
             const listRule = symbolTable.resolveSymbol('list');
 
             assert.ok(listRule, 'list rule should be found');
@@ -278,7 +278,7 @@ unused: "unused"
             assert.strictEqual(unusedRule.usages.length, 0, 'unused should have no usage locations');
         });
 
-        test('should track parameterized rule usage', async () => {
+        test('should track template rule usage', async () => {
             const content = `
 start: list{WORD}
 list{item}: item ("," item)*
@@ -288,7 +288,7 @@ WORD: /\\w+/
             const document = createMockDocument(content);
             symbolTable = await analyzer.analyze(document);
 
-            // Check that parameterized rule usage is tracked
+            // Check that template rule usage is tracked
             const listRule = symbolTable.resolveSymbol('list');
 
             assert.ok(listRule, 'list rule should be found');

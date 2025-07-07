@@ -1,24 +1,24 @@
-// Test file for parameterized rule syntax highlighting
+// Test file for template rule syntax highlighting
 
-// Basic parameterized rule definition
+// Basic template rule definition
 comprehension{comp_result}: comp_result comp_fors [comp_if]
 
-// Parameterized rule with conditional modifier
+// Template rule with conditional modifier
 ?optional_rule{param}: param optional_content
 
-// Parameterized rule with pinned modifier
+// Template rule with pinned modifier
 !pinned_rule{param}: param pinned_content
 
-// Parameterized rule with priority
-parameterized_with_priority{param}.5: param content
+// Template rule with priority
+template_with_priority{param}.5: param content
 
-// Usage of parameterized rules
+// Usage of template rules
 arguments: argvalue ("," argvalue)*  ("," [ starargs | kwargs])?
          | starargs
          | kwargs
          | comprehension{test}
 
-// Multiple parameterized rule usages
+// Multiple template rule usages
 complex_expr: comprehension{expr}
             | comprehension{test}
             | other_param_rule{value}

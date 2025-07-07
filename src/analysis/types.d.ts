@@ -60,7 +60,7 @@ export interface SymbolLocation {
 }
 
 /**
- * Information about a parameter in a parameterized rule
+ * Information about a parameter in a template rule
  */
 export interface ParameterInfo {
     name: string;
@@ -84,7 +84,7 @@ export interface SymbolTableEntry {
     location: SymbolLocation;
     scope: Scope;
 
-    // For parameterized rules
+    // For template rules
     isTemplate?: boolean;
     baseRuleName?: string;
     parameters?: ParameterInfo[];
@@ -144,9 +144,9 @@ export interface ValidationResult {
 // ============================================================================
 
 /**
- * Information about a parameterized rule usage
+ * Information about a template rule usage
  */
-export interface ParameterizedRuleUsage {
+export interface TemplateRuleUsage {
     ruleName: string;
     arguments: string[];
     range: vscode.Range;
@@ -154,9 +154,9 @@ export interface ParameterizedRuleUsage {
 }
 
 /**
- * Result of parsing a parameterized rule definition
+ * Result of parsing a template rule definition
  */
-export interface ParameterizedRuleDefinition {
+export interface TemplateRuleDefinition {
     ruleName: string;
     parameters: ParameterInfo[];
     range: vscode.Range;

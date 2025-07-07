@@ -73,22 +73,22 @@ suite('LarkSymbolTable', () => {
         });
     });
 
-    suite('Parameterized Rules', () => {
-        test('should resolve parameterized rule by base name', () => {
-            const symbolEntry: SymbolTableEntry = createMockParameterizedSymbolEntry(
+    suite('Template Rules', () => {
+        test('should resolve template rule by base name', () => {
+            const symbolEntry: SymbolTableEntry = createMockTemplateSymbolEntry(
                 'comprehension{comp_result}',
                 'comprehension'
             );
 
             symbolTable.addSymbol(symbolEntry);
 
-            const resolved = symbolTable.resolveParameterizedRule('comprehension');
+            const resolved = symbolTable.resolveTemplateRule('comprehension');
             assert.strictEqual(resolved, symbolEntry);
         });
 
-        test('should resolve exact match before parameterized match', () => {
+        test('should resolve exact match before template match', () => {
             const exactEntry: SymbolTableEntry = createMockSymbolEntry('rule_name', 'rule');
-            const paramEntry: SymbolTableEntry = createMockParameterizedSymbolEntry(
+            const paramEntry: SymbolTableEntry = createMockTemplateSymbolEntry(
                 'rule_name{param}',
                 'rule_name'
             );
@@ -96,12 +96,12 @@ suite('LarkSymbolTable', () => {
             symbolTable.addSymbol(exactEntry);
             symbolTable.addSymbol(paramEntry);
 
-            const resolved = symbolTable.resolveParameterizedRule('rule_name');
+            const resolved = symbolTable.resolveTemplateRule('rule_name');
             assert.strictEqual(resolved, exactEntry);
         });
 
-        test('should return null for non-existent parameterized rule', () => {
-            const resolved = symbolTable.resolveParameterizedRule('nonexistent');
+        test('should return null for non-existent template rule', () => {
+            const resolved = symbolTable.resolveTemplateRule('nonexistent');
             assert.strictEqual(resolved, null);
         });
     });
@@ -200,7 +200,7 @@ suite('LarkSymbolTable', () => {
         };
     }
 
-    function createMockParameterizedSymbolEntry(name: string, baseName: string): SymbolTableEntry {
+    function createMockTemplateSymbolEntry(name: string, baseName: string): SymbolTableEntry {
         const entry = createMockSymbolEntry(name, 'rule');
         entry.isTemplate = true;
         entry.baseRuleName = baseName;

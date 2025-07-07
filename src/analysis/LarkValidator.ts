@@ -6,8 +6,8 @@ import {
     RULE_DEFINITION_REGEX,
     TERMINAL_USAGE_REGEX,
     RULE_USAGE_REGEX,
-    PARAMETERIZED_RULE_USAGE_REGEX,
-    PARAMETERIZED_RULE_DEFINITION_REGEX,
+    TEMPLATE_RULE_USAGE_REGEX,
+    TEMPLATE_RULE_DEFINITION_REGEX,
     DEFINITION_HEAD_REGEX,
     parseParameters
 } from '../utils/LarkRegexPatterns';
@@ -113,12 +113,12 @@ export class LarkValidator {
     ): void {
         let searchableText = lineText;
         let searchOffset = 0;
-        let ruleParameters: string[] = []; // Parameters for parameterized rules
+        let ruleParameters: string[] = []; // Parameters for template rules
 
         // Check if this line contains a definition
         const terminalDefMatch = TERMINAL_DEFINITION_REGEX.exec(lineText);
         const ruleDefMatch = RULE_DEFINITION_REGEX.exec(lineText);
-        const parameterizedRuleDefMatch = PARAMETERIZED_RULE_DEFINITION_REGEX.exec(lineText);
+        const templateRuleDefMatch = TEMPLATE_RULE_DEFINITION_REGEX.exec(lineText);
         const definitionHeadMatch = DEFINITION_HEAD_REGEX.exec(lineText);
 
         if (terminalDefMatch || ruleDefMatch) {
@@ -129,9 +129,9 @@ export class LarkValidator {
                 searchableText = lineText.slice(searchOffset);
             }
 
-            // If this is a parameterized rule definition, extract parameters
-            if (parameterizedRuleDefMatch) {
-                const parametersString = parameterizedRuleDefMatch[2];
+            // If this is a template rule definition, extract parameters
+            if (templateRuleDefMatch) {
+                const parametersString = templateRuleDefMatch[2];
                 ruleParameters = parseParameters(parametersString);
             }
         } else if (definitionHeadMatch) {
@@ -153,21 +153,21 @@ export class LarkValidator {
         // Strip content that should be ignored
         searchableText = stripIgnoredContent(searchableText);
 
-        // First, remove parameterized rule usages to avoid false matches in regular rule processing
-        const textWithoutParameterizedRules = searchableText.replace(/\b[a-z_][a-z_0-9]*\{[^}]*\}/g, '');
+        // First, remove template rule usages to avoid false matches in regular rule processing
+        const textWithoutTemplateRules = searchableText.replace(/\b[a-z_][a-z_0-9]*\{[^}]*\}/g, '');
 
         // Check for undefined symbols with scope awareness
-        this.checkSymbolUsages(textWithoutParameterizedRules, searchOffset, lineIndex, scope, diagnostics, 'terminal', symbolTable, ruleParameters);
-        this.checkSymbolUsages(textWithoutParameterizedRules, searchOffset, lineIndex, scope, diagnostics, 'rule', symbolTable, ruleParameters);
+        this.checkSymbolUsages(textWithoutTemplateRules, searchOffset, lineIndex, scope, diagnostics, 'terminal', symbolTable, ruleParameters);
+        this.checkSymbolUsages(textWithoutTemplateRules, searchOffset, lineIndex, scope, diagnostics, 'rule', symbolTable, ruleParameters);
 
-        // Check for undefined parameterized rule usages (using original text)
-        this.checkParameterizedRuleUsages(searchableText, searchOffset, lineIndex, scope, diagnostics, symbolTable);
+        // Check for undefined template rule usages (using original text)
+        this.checkTemplateRuleUsages(searchableText, searchOffset, lineIndex, scope, diagnostics, symbolTable);
     }
 
     /**
-     * Checks for undefined parameterized rule usages
+     * Checks for undefined template rule usages
      */
-    private checkParameterizedRuleUsages(
+    private checkTemplateRuleUsages(
         searchableText: string,
         searchOffset: number,
         lineIndex: number,
@@ -175,10 +175,10 @@ export class LarkValidator {
         diagnostics: vscode.Diagnostic[],
         symbolTable: LarkSymbolTable
     ): void {
-        let parameterizedMatch;
-        while ((parameterizedMatch = PARAMETERIZED_RULE_USAGE_REGEX.exec(searchableText)) !== null) {
-            const baseRuleName = parameterizedMatch[1];
-            const fullRuleUsage = parameterizedMatch[0]; // Full match like "rule{param}"
+        let templateMatch;
+        while ((templateMatch = TEMPLATE_RULE_USAGE_REGEX.exec(searchableText)) !== null) {
+            const baseRuleName = templateMatch[1];
+            const fullRuleUsage = templateMatch[0]; // Full match like "rule{param}"
 
             // Skip 'start' rule as it's special
             if (baseRuleName === 'start') {
@@ -186,14 +186,14 @@ export class LarkValidator {
             }
 
             // Use scope-aware resolution
-            const resolvedRule = symbolTable.resolveParameterizedRule(baseRuleName, scope);
+            const resolvedRule = symbolTable.resolveTemplateRule(baseRuleName, scope);
             if (!resolvedRule) {
-                const actualStartPosition = searchOffset + parameterizedMatch.index;
+                const actualStartPosition = searchOffset + templateMatch.index;
                 const range = createSymbolRange(lineIndex, actualStartPosition, fullRuleUsage);
 
                 const diagnostic = new vscode.Diagnostic(
                     range,
-                    `Undefined parameterized rule '${baseRuleName}'`,
+                    `Undefined template rule '${baseRuleName}'`,
                     vscode.DiagnosticSeverity.Error
                 );
                 diagnostics.push(diagnostic);
@@ -252,7 +252,7 @@ export class LarkValidator {
                 continue;
             }
 
-            // Skip if this is a parameter in a parameterized rule definition
+            // Skip if this is a parameter in a template rule definition
             if (symbolType === 'rule' && ruleParameters.includes(referencedSymbolName)) {
                 continue;
             }

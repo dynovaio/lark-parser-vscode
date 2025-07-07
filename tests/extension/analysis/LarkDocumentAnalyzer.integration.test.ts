@@ -181,7 +181,7 @@ suite('LarkDocumentAnalyzer Integration', () => {
         }
     });
 
-    test('should handle complex grammar with imports and parameterized rules', async () => {
+    test('should handle complex grammar with imports and template rules', async () => {
         const content = `
 // Complex grammar demonstrating various Lark features
 %import common.WORD
@@ -230,7 +230,7 @@ another_unused: WORD "unused"
         assert.strictEqual(numImport.isImported, true);
         assert.strictEqual(numImport.originalName, 'NUMBER');
 
-        // Check parameterized rules
+        // Check template rules
         const listRule = symbolTable.resolveSymbol('list');
         assert.ok(listRule, 'list rule should be found');
         assert.strictEqual(listRule.isTemplate, true);

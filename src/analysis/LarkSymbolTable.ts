@@ -45,12 +45,12 @@ export class LarkSymbolTable {
     }
 
     /**
-     * Resolves a parameterized rule by base name
+     * Resolves a template rule by base name
      * @param name Base rule name (without parameters)
      * @param scope Scope to search in (defaults to global scope)
      * @returns SymbolTableEntry if found, null otherwise
      */
-    resolveParameterizedRule(name: string, scope?: Scope): SymbolTableEntry | null {
+    resolveTemplateRule(name: string, scope?: Scope): SymbolTableEntry | null {
         const searchScope = scope || this.globalScope;
 
         // First check for exact match
@@ -59,8 +59,8 @@ export class LarkSymbolTable {
             return exactMatch;
         }
 
-        // Look for parameterized rules with this base name
-        return this.findParameterizedRuleByBaseName(name, searchScope);
+        // Look for template rules with this base name
+        return this.findTemplateRuleByBaseName(name, searchScope);
     }
 
     /**
@@ -130,7 +130,7 @@ export class LarkSymbolTable {
     }
 
     /**
-     * Validates parameter arguments for a parameterized rule usage
+     * Validates parameter arguments for a template rule usage
      * @param ruleName Base rule name
      * @param args Arguments provided
      * @param scope Scope for argument validation
@@ -187,7 +187,7 @@ export class LarkSymbolTable {
      * Creates a new rule scope
      * @param ruleName Name of the rule
      * @param range Range of the rule definition
-     * @param parameters Parameters of the rule (if parameterized)
+     * @param parameters Parameters of the rule (if template)
      * @returns Created rule scope
      */
     createRuleScope(ruleName: string, range: vscode.Range, parameters?: ParameterInfo[]): LarkScope {
@@ -231,12 +231,12 @@ export class LarkSymbolTable {
     }
 
     /**
-     * Finds a parameterized rule by its base name
+     * Finds a template rule by its base name
      * @param baseName Base name to search for
      * @param scope Scope to search in
      * @returns SymbolTableEntry if found, null otherwise
      */
-    private findParameterizedRuleByBaseName(baseName: string, scope: Scope): SymbolTableEntry | null {
+    private findTemplateRuleByBaseName(baseName: string, scope: Scope): SymbolTableEntry | null {
         // Search in current scope
         for (const entry of scope.symbols.values()) {
             if (entry.baseRuleName === baseName) {
@@ -246,7 +246,7 @@ export class LarkSymbolTable {
 
         // Search in parent scope
         if (scope.parent) {
-            return this.findParameterizedRuleByBaseName(baseName, scope.parent);
+            return this.findTemplateRuleByBaseName(baseName, scope.parent);
         }
 
         return null;
