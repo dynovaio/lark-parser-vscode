@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { LarkSymbolTable, SymbolTypes, SymbolModifiers } from './LarkSymbolTable';
-import type { SymbolDefinition, SymbolTableEntry, SymbolType, ParameterInfo, SymbolLocation } from './types.d';
+import type { AnalysisResult, SymbolDefinition, SymbolTableEntry, SymbolType, ParameterInfo, SymbolLocation, UndefinedSymbolTable } from './types.d';
 import { LarkScope, ScopeTypes } from './LarkScope';
 
 /**
@@ -84,15 +84,19 @@ export class LarkDocumentAnalyzer {
      * @param document The document to analyze.
      * @returns A new LarkSymbolTable populated with the analysis results.
      */
-    public async analyze(document: vscode.TextDocument): Promise<LarkSymbolTable> {
+    public async analyze(document: vscode.TextDocument): Promise<AnalysisResult> {
         const symbolTable = new LarkSymbolTable();
+        const undefinedSymbolTable: UndefinedSymbolTable = new Map();
         const text = document.getText();
         const lines = text.split('\n');
 
         await this.collectSymbolDefinitions(document, lines, symbolTable);
-        await this.collectSymbolUsages(document, lines, symbolTable);
+        await this.collectSymbolUsages(document, lines, symbolTable, undefinedSymbolTable);
 
-        return symbolTable;
+        return {
+            symbolTable,
+            undefinedSymbolTable
+        };
     }
 
     // ---------------------------------------------------------------------- //
@@ -665,7 +669,8 @@ export class LarkDocumentAnalyzer {
     private async collectSymbolUsages(
         document: vscode.TextDocument,
         lines: string[],
-        symbolTable: LarkSymbolTable
+        symbolTable: LarkSymbolTable,
+        undefinedSymbolTable: UndefinedSymbolTable
     ): Promise<void> {
         const globalScope = symbolTable.getGlobalScope() as LarkScope;
 
@@ -678,13 +683,13 @@ export class LarkDocumentAnalyzer {
             }
 
             if (this.isDirectiveLine(cleanedCurrentLine)) {
-                const processLines = await this.processSymbolUsagesWithinDirectives(lines, lineNumber, document, symbolTable, globalScope);
+                const processLines = await this.processSymbolUsagesWithinDirectives(lines, lineNumber, document, symbolTable, undefinedSymbolTable, globalScope);
                 lineNumber += processLines - 1; // Adjust line number based on directive processing
                 continue; // Skip to the next line after processing directives
             }
 
             if (this.isSymbolDefinitionLine(cleanedCurrentLine)) {
-                const processLines = await this.processSymbolUsagesWithinSymbolDefinitions(lines, lineNumber, document, symbolTable, globalScope);
+                const processLines = await this.processSymbolUsagesWithinSymbolDefinitions(lines, lineNumber, document, symbolTable, undefinedSymbolTable, globalScope);
                 lineNumber += processLines - 1; // Adjust line number based on symbol definition processing
                 continue; // Skip to the next line after processing symbol definitions
             }
@@ -701,7 +706,7 @@ export class LarkDocumentAnalyzer {
      * @param scope The scope to search for symbols in
      * @returns Promise resolving to the number of lines processed
      */
-    private async processSymbolUsagesWithinDirectives(lines: string[], startIndex: number, document: vscode.TextDocument, symbolTable: LarkSymbolTable, scope: LarkScope): Promise<number> {
+    private async processSymbolUsagesWithinDirectives(lines: string[], startIndex: number, document: vscode.TextDocument, symbolTable: LarkSymbolTable, undefinedSymbolTable: UndefinedSymbolTable, scope: LarkScope): Promise<number> {
         const currentLine = lines[startIndex];
         const cleanedCurrentLine = this.removeComments(currentLine);
 
@@ -710,17 +715,17 @@ export class LarkDocumentAnalyzer {
 
             if (match) {
                 const [, terminalName] = match;
+                const locationStart = currentLine.search(this.escapeLiterals(terminalName));
+                const locationEnd = locationStart + terminalName.length;
+                const location = {
+                    range: new vscode.Range(
+                        new vscode.Position(startIndex, locationStart),
+                        new vscode.Position(startIndex, locationEnd)
+                    ),
+                    uri: document.uri
+                };
                 const symbol = symbolTable.resolveSymbol(terminalName, scope);
                 if (symbol) {
-                    const locationStart = currentLine.search(terminalName);
-                    const locationEnd = locationStart + terminalName.length;
-                    const location = {
-                        range: new vscode.Range(
-                            new vscode.Position(startIndex, locationStart),
-                            new vscode.Position(startIndex, locationEnd)
-                        ),
-                        uri: document.uri
-                    };
                     symbolTable.markSymbolAsUsed(
                         terminalName,
                         location,
@@ -730,6 +735,17 @@ export class LarkDocumentAnalyzer {
                         terminalName,
                         location,
                         scope
+                    );
+                } else {
+                    this.handleUndefinedSymbol(
+                        terminalName,
+                        location,
+                        scope,
+                        undefinedSymbolTable,
+                        {
+                            isIgnored: true,
+                            ignoreLocations: [location],
+                        }
                     );
                 }
             }
@@ -750,7 +766,7 @@ export class LarkDocumentAnalyzer {
      * @param scope The scope to search for symbols in
      * @returns Promise resolving to the number of lines processed
      */
-    private async processSymbolUsagesWithinSymbolDefinitions(lines: string[], startIndex: number, document: vscode.TextDocument, symbolTable: LarkSymbolTable, scope: LarkScope): Promise<number> {
+    private async processSymbolUsagesWithinSymbolDefinitions(lines: string[], startIndex: number, document: vscode.TextDocument, symbolTable: LarkSymbolTable, undefinedSymbolTable: UndefinedSymbolTable, scope: LarkScope): Promise<number> {
         const currentLine: string = lines[startIndex];
         const cleanedCurrentLine: string = this.removeComments(currentLine);
 
@@ -818,23 +834,31 @@ export class LarkDocumentAnalyzer {
                     symbolName = match[1];
                     symbol = symbolTable.resolveSymbol(symbolName, scope);
 
+
+                    const escapedBody = this.escapeLiterals(body);
+                    const locationStart = rawLine.search(escapedBody) + maskedBody.search(this.escapeLiterals(symbolName));
+                    const locationEnd = locationStart + symbolName.length;
+
+                    const location = {
+                        range: new vscode.Range(
+                            new vscode.Position(startIndex, locationStart),
+                            new vscode.Position(startIndex, locationEnd)
+                        ),
+                        uri: document.uri
+                    };
+
                     if (symbol) {
-                        let escapedBody = this.escapeLiterals(body);
-
-                        const locationStart = rawLine.search(escapedBody) + maskedBody.search(symbolName);
-                        const locationEnd = locationStart + symbolName.length;
-
-                        const location = {
-                            range: new vscode.Range(
-                                new vscode.Position(startIndex, locationStart),
-                                new vscode.Position(startIndex, locationEnd)
-                            ),
-                            uri: document.uri
-                        };
                         symbolTable.markSymbolAsUsed(
                             symbolName,
                             location,
                             scope
+                        );
+                    } else {
+                        this.handleUndefinedSymbol(
+                            symbolName,
+                            location,
+                            scope,
+                            undefinedSymbolTable
                         );
                     }
                 }
@@ -846,6 +870,41 @@ export class LarkDocumentAnalyzer {
         return 1;
     }
 
+    private handleUndefinedSymbol(
+        symbolName: string,
+        location: vscode.Location,
+        scope: LarkScope,
+        undefinedSymbolTable: UndefinedSymbolTable,
+        extraAttributes: Record<string, unknown> = {}
+    ): void {
+        let undefinedSymbol = undefinedSymbolTable.get(symbolName);
+
+        if (undefinedSymbol) {
+            undefinedSymbol = {
+                ...undefinedSymbol,
+                ...extraAttributes,
+                usages: [...undefinedSymbol.usages, location],
+            };
+        } else {
+            undefinedSymbol = {
+                name: symbolName,
+                isDefined: false,
+
+                type: this.computeSymbolType(symbolName),
+                scope,
+                location,
+
+                isUsed: true,
+                usages: [location],
+
+                isInlined: symbolName.startsWith('_'),
+
+                ...extraAttributes,
+            };
+        }
+
+        undefinedSymbolTable.set(symbolName, undefinedSymbol);
+    }
     // ---------------------------------------------------------------------- //
     // Utility methods
     // ---------------------------------------------------------------------- //

@@ -124,7 +124,7 @@ suite('LarkDocumentAnalyzer Integration', () => {
             const content = loadTestGrammar('calc.test.lark');
             const document = createDocument(content, 'test://calc.lark');
 
-            symbolTable = await analyzer.analyze(document);
+            symbolTable = (await analyzer.analyze(document)).symbolTable as LarkSymbolTable;
 
             // Should have found some symbols
             const allSymbols = symbolTable.getAllSymbols();
@@ -157,7 +157,7 @@ suite('LarkDocumentAnalyzer Integration', () => {
             const content = loadTestGrammar('json.test.lark');
             const document = createDocument(content, 'test://json.lark');
 
-            symbolTable = await analyzer.analyze(document);
+            symbolTable = (await analyzer.analyze(document)).symbolTable as LarkSymbolTable;
 
             // Should have found some symbols
             const allSymbols = symbolTable.getAllSymbols();
@@ -218,7 +218,7 @@ another_unused: WORD "unused"
         `.trim();
 
         const document = createDocument(content, 'test://complex.lark');
-        symbolTable = await analyzer.analyze(document);
+        symbolTable = (await analyzer.analyze(document)).symbolTable as LarkSymbolTable;
 
         // Check imports
         const wordImport = symbolTable.resolveSymbol('WORD');
@@ -294,7 +294,7 @@ NUMBER: /\\d+/
         `.trim();
 
         const document = createDocument(content, 'test://outline.lark');
-        symbolTable = await analyzer.analyze(document);
+        symbolTable = (await analyzer.analyze(document)).symbolTable as LarkSymbolTable;
 
         const documentSymbols = symbolTable.getDocumentSymbols();
         assert.ok(documentSymbols.length > 0, 'should provide document symbols');

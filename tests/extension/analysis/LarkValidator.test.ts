@@ -118,8 +118,8 @@ unused: "unused"
             `.trim();
 
             const document = createMockDocument(content);
-            const symbolTable = await analyzer.analyze(document);
-            const diagnostics = validator.validate(document, symbolTable);
+            const analysisResult = await analyzer.analyze(document);
+            const diagnostics = validator.validate(document, analysisResult);
 
             // Should have diagnostics for unused symbol
             const unusedDiagnostics = diagnostics.filter(d => d.message.includes('unused'));
@@ -133,8 +133,8 @@ unused: "unused"
             `.trim();
 
             const document = createMockDocument(content);
-            const symbolTable = await analyzer.analyze(document);
-            const diagnostics = validator.validate(document, symbolTable);
+            const analysisResult = await analyzer.analyze(document);
+            const diagnostics = validator.validate(document, analysisResult);
 
             // Should have diagnostic for unused but not for start
             const startDiagnostics = diagnostics.filter(d => d.message.includes('start'));
@@ -154,8 +154,8 @@ word: WORD
             `.trim();
 
             const document = createMockDocument(content);
-            const symbolTable = await analyzer.analyze(document);
-            const diagnostics = validator.validate(document, symbolTable);
+            const analysisResult = await analyzer.analyze(document);
+            const diagnostics = validator.validate(document, analysisResult);
 
             // Should not have diagnostics for WS_INLINE since it's used in %ignore
             const wsInlineDiagnostics = diagnostics.filter(d => d.message.includes('WS_INLINE'));
@@ -170,8 +170,8 @@ start: undefined_rule
             `.trim();
 
             const document = createMockDocument(content);
-            const symbolTable = await analyzer.analyze(document);
-            const diagnostics = validator.validate(document, symbolTable);
+            const analysisResult = await analyzer.analyze(document);
+            const diagnostics = validator.validate(document, analysisResult);
 
             // Should have diagnostics for undefined symbol
             // Note: This test might need adjustment based on current implementation
@@ -188,8 +188,11 @@ start: undefined_rule
             // Override languageId to simulate non-lark document
             (jsDocument as any).languageId = 'javascript';
 
-            const symbolTable = new LarkSymbolTable();
-            const diagnostics = validator.validate(jsDocument, symbolTable);
+            const analysisResult = {
+                symbolTable: new LarkSymbolTable(),
+                undefinedSymbolTable: new Map(),
+            };
+            const diagnostics = validator.validate(jsDocument, analysisResult);
 
             assert.strictEqual(diagnostics.length, 0, 'should return empty diagnostics for non-lark documents');
         });
@@ -199,8 +202,8 @@ start: undefined_rule
         test('should handle empty documents', async () => {
             const content = '';
             const document = createMockDocument(content);
-            const symbolTable = await analyzer.analyze(document);
-            const diagnostics = validator.validate(document, symbolTable);
+            const analysisResult = await analyzer.analyze(document);
+            const diagnostics = validator.validate(document, analysisResult);
 
             // Should not throw and should return array
             assert.ok(Array.isArray(diagnostics), 'should return diagnostics array for empty document');
@@ -212,8 +215,8 @@ this is not valid lark grammar :::
             `.trim();
 
             const document = createMockDocument(content);
-            const symbolTable = await analyzer.analyze(document);
-            const diagnostics = validator.validate(document, symbolTable);
+            const analysisResult = await analyzer.analyze(document);
+            const diagnostics = validator.validate(document, analysisResult);
 
             // Should not throw
             assert.ok(Array.isArray(diagnostics), 'should return diagnostics array for malformed grammar');

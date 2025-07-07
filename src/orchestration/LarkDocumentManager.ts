@@ -2,16 +2,17 @@ import * as vscode from 'vscode';
 import { LarkDocumentAnalyzer } from '../analysis/LarkDocumentAnalyzer';
 import { LarkSymbolTable } from '../analysis/LarkSymbolTable';
 import { LarkValidator } from '../analysis/LarkValidator';
+import { AnalysisResult } from '../analysis/types.d';
 
 export class LarkDocumentManager {
-    private documentSymbolTables: Map<string, LarkSymbolTable>;
+    private documentAnalysisResult: Map<string, AnalysisResult>;
     private analyzer: LarkDocumentAnalyzer;
     private validator: LarkValidator;
     private diagnosticCollection: vscode.DiagnosticCollection;
 
     constructor (context: vscode.ExtensionContext) {
         this.diagnosticCollection = vscode.languages.createDiagnosticCollection('lark-diagnostics');
-        this.documentSymbolTables = new Map<string, LarkSymbolTable>();
+        this.documentAnalysisResult = new Map<string, AnalysisResult>();
         this.analyzer = new LarkDocumentAnalyzer();
         this.validator = new LarkValidator();
 
@@ -24,7 +25,7 @@ export class LarkDocumentManager {
         vscode.workspace.onDidChangeTextDocument(e => this.handleDocumentChange(e.document));
         vscode.workspace.onDidCloseTextDocument(doc => {
             this.diagnosticCollection.delete(doc.uri);
-            this.documentSymbolTables.delete(doc.uri.toString());
+            this.documentAnalysisResult.delete(doc.uri.toString());
         });
 
         // Handle the initially active document
@@ -39,15 +40,15 @@ export class LarkDocumentManager {
         }
 
         // Step 1: Analyze the document to get a new symbol table.
-        const symbolTable = await this.analyzer.analyze(document);
-        this.documentSymbolTables.set(document.uri.toString(), symbolTable);
+        const analysisResult = await this.analyzer.analyze(document);
+        this.documentAnalysisResult.set(document.uri.toString(), analysisResult);
 
         // Step 2: Validate the document using the new symbol table.
-        const diagnostics = this.validator.validate(document, symbolTable);
+        const diagnostics = this.validator.validate(document, analysisResult);
         this.diagnosticCollection.set(document.uri, diagnostics);
     }
 
     public getSymbolTable(uri: vscode.Uri): LarkSymbolTable | undefined {
-        return this.documentSymbolTables.get(uri.toString());
+        return this.documentAnalysisResult.get(uri.toString())?.symbolTable as LarkSymbolTable;
     }
 }

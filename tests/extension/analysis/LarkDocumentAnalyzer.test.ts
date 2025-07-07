@@ -117,7 +117,7 @@ world: "world"
             `.trim();
 
             const document = createMockDocument(content);
-            symbolTable = await analyzer.analyze(document);
+            symbolTable = (await analyzer.analyze(document)).symbolTable as LarkSymbolTable;
 
             // Check that rules were parsed
             const startRule = symbolTable.resolveSymbol('start');
@@ -141,7 +141,7 @@ WORLD: "world"
             `.trim();
 
             const document = createMockDocument(content);
-            symbolTable = await analyzer.analyze(document);
+            symbolTable = (await analyzer.analyze(document)).symbolTable as LarkSymbolTable;
 
             // Check that terminals were parsed
             const helloTerminal = symbolTable.resolveSymbol('HELLO');
@@ -162,7 +162,7 @@ WORD: /\\w+/
             `.trim();
 
             const document = createMockDocument(content);
-            symbolTable = await analyzer.analyze(document);
+            symbolTable = (await analyzer.analyze(document)).symbolTable as LarkSymbolTable;
 
             // Check that template rule was parsed
             const listRule = symbolTable.resolveSymbol('list');
@@ -195,7 +195,7 @@ NUMBER: /\\d+/
             `.trim();
 
             const document = createMockDocument(content);
-            symbolTable = await analyzer.analyze(document);
+            symbolTable = (await analyzer.analyze(document)).symbolTable as LarkSymbolTable;
 
             // Check that all rules were parsed
             const exprRule = symbolTable.resolveSymbol('expr');
@@ -226,7 +226,7 @@ start: WORD NUM json_value
             `.trim();
 
             const document = createMockDocument(content);
-            symbolTable = await analyzer.analyze(document);
+            symbolTable = (await analyzer.analyze(document)).symbolTable as LarkSymbolTable;
 
             const wordImport = symbolTable.resolveSymbol('WORD');
             assert.ok(wordImport, 'WORD import should be found');
@@ -257,7 +257,7 @@ unused: "unused"
             `.trim();
 
             const document = createMockDocument(content);
-            symbolTable = await analyzer.analyze(document);
+            symbolTable = (await analyzer.analyze(document)).symbolTable as LarkSymbolTable;
 
             // Check usage tracking
             const helloRule = symbolTable.resolveSymbol('hello');
@@ -286,7 +286,7 @@ WORD: /\\w+/
             `.trim();
 
             const document = createMockDocument(content);
-            symbolTable = await analyzer.analyze(document);
+            symbolTable = (await analyzer.analyze(document)).symbolTable as LarkSymbolTable;
 
             // Check that template rule usage is tracked
             const listRule = symbolTable.resolveSymbol('list');
@@ -309,7 +309,7 @@ world: "world"
             `.trim();
 
             const document = createMockDocument(content);
-            symbolTable = await analyzer.analyze(document);
+            symbolTable = (await analyzer.analyze(document)).symbolTable as LarkSymbolTable;
 
             // Check that rules were parsed correctly despite comments
             const startRule = symbolTable.resolveSymbol('start');
@@ -328,7 +328,7 @@ world: "world"
             const document = createMockDocument(content);
 
             // Should not throw
-            symbolTable = await analyzer.analyze(document);
+            symbolTable = (await analyzer.analyze(document)).symbolTable as LarkSymbolTable;
 
             // Global scope should still exist
             const globalScope = symbolTable.getGlobalScope();
@@ -345,7 +345,7 @@ world: "world"
             const document = createMockDocument(content);
 
             // Should not throw
-            symbolTable = await analyzer.analyze(document);
+            symbolTable = (await analyzer.analyze(document)).symbolTable as LarkSymbolTable;
 
             // Should have no symbols
             const allSymbols = symbolTable.getAllSymbols();
@@ -361,7 +361,7 @@ hello: "hello"
             `.trim();
 
             const document = createMockDocument(content);
-            symbolTable = await analyzer.analyze(document);
+            symbolTable = (await analyzer.analyze(document)).symbolTable as LarkSymbolTable;
 
             // Verify symbols exist
             assert.ok(symbolTable.resolveSymbol('start'), 'start should exist');
@@ -382,7 +382,7 @@ hello: "hello"
             `.trim();
 
             const document = createMockDocument(content);
-            symbolTable = await analyzer.analyze(document);
+            symbolTable = (await analyzer.analyze(document)).symbolTable as LarkSymbolTable;
 
             // Simulate document changes by re-analyzing with updated content
             const updatedContent = `
@@ -394,7 +394,7 @@ new_rule: "new"
             const updatedDocument = createMockDocument(updatedContent);
 
             // Should not throw - with stateless analyzer, this is just a re-analysis
-            symbolTable = await analyzer.analyze(updatedDocument);
+            symbolTable = (await analyzer.analyze(updatedDocument)).symbolTable as LarkSymbolTable;
 
             // Verify existing symbols still exist and new symbol was added
             assert.ok(symbolTable.resolveSymbol('start'), 'start should still exist');
@@ -421,7 +421,7 @@ word: WORD ["," | "!"]
             `.trim();
 
             const document = createMockDocument(content);
-            symbolTable = await analyzer.analyze(document);
+            symbolTable = (await analyzer.analyze(document)).symbolTable as LarkSymbolTable;
 
             // Check that WS_INLINE is imported and marked as used (due to %ignore)
             const wsInline = symbolTable.resolveSymbol('WS_INLINE');

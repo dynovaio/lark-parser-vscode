@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import { LarkScope } from './LarkScope';
 import type {
     Scope,
+    SymbolTable,
     SymbolTableEntry,
     SymbolLocation,
     ValidationResult,
@@ -24,7 +25,7 @@ export enum SymbolModifiers {
  * Central symbol table for Lark grammar analysis
  * Manages symbols, scopes, and provides symbol resolution services
  */
-export class LarkSymbolTable {
+export class LarkSymbolTable implements SymbolTable {
     private globalScope: LarkScope;
     private scopes: Map<string, LarkScope>; // Rule name -> scope
 

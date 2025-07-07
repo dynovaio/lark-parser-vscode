@@ -75,14 +75,14 @@ export interface ParameterInfo {
 export interface SymbolTableEntry {
     // Basic symbol information
     name: string;
-    priority: number;
+    priority?: number;
     body?: string;
     isDefined?: boolean;
 
     // Symbol metadata
     type: SymbolType;
-    location: SymbolLocation;
     scope: Scope;
+    location: SymbolLocation;
 
     // For template rules
     isTemplate?: boolean;
@@ -126,9 +126,44 @@ export interface SymbolTableEntry {
     originalType?: string;
 }
 
+export interface SymbolTable {
+    // private globalScope: Scope;
+    // private scopes: Map<string, Scope>;
+
+    resolveSymbol(name: string, scope?: Scope): SymbolTableEntry | null;
+    resolveTemplateRule(name: string, scope?: Scope): SymbolTableEntry | null;
+    getCurrentScope(position: vscode.Position): Scope;
+    getGlobalScope(): Scope;
+    getRuleScope(ruleName: string): Scope | null;
+    getDocumentSymbols(): vscode.DocumentSymbol[];
+    getUnusedSymbols(): string[];
+    validateParameterArguments(ruleName: string, arguments: string[], scope?: Scope): ValidationResult[];
+    markSymbolAsUsed(symbolName: string, location: SymbolLocation, scope?: Scope): void;
+    markSymbolAsIgnored(symbolName: string, location: SymbolLocation, scope?: Scope): void;
+    addSymbol(entry: SymbolTableEntry): void;
+    createRuleScope(ruleName: string, range: vscode.Range, parameters?: ParameterInfo[]): Scope;
+    getAllSymbols(): SymbolTableEntry[];
+    // private findTemplateRuleByBaseName(baseName: string, scope: Scope): SymbolTableEntry | null;
+    // private convertToDocumentSymbol(entry: SymbolTableEntry): vscode.DocumentSymbol;
+    clearScope(scope: Scope): void;
+    getAllScopes(): Scope[];
+    getScopesContaining(range: vscode.Range): Scope[];
+    // private rangeContains(container: vscode.Range, contained: vscode.Range): boolean;
+}
+
+export type UndefinedSymbolTable = Map<string, SymbolTableEntry>;
+
 // ============================================================================
 // VALIDATION AND ANALYSIS INTERFACES
 // ============================================================================
+
+/**
+ * Analysis result for a Lark document
+ */
+export interface AnalysisResult {
+    symbolTable: SymbolTable;
+    undefinedSymbolTable: UndefinedSymbolTable;
+}
 
 /**
  * Validation result for parameter arguments
