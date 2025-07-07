@@ -355,12 +355,18 @@ export class LarkDocumentAnalyzer {
 
         const [, modifier, name, , priority, body] = match;
         const location = this.computeLocation(document, definitionLines, startIndex, endIndex);
+        const parameters = this.processTemplateRuleParameters(definition);
         const ruleScope = new LarkScope(
             ScopeTypes.RULE,
             location.range,
             name,
             scope,
         );
+        if (parameters.length > 0) {
+            for (const param of parameters) {
+                ruleScope.addParameter(param);
+            }
+        }
 
         const symbol: SymbolTableEntry = {
             name,
@@ -377,7 +383,7 @@ export class LarkDocumentAnalyzer {
 
             isTemplate: true,
             baseRuleName: name,
-            parameters: this.processTemplateRuleParameters(definition, document, ruleScope),
+            parameters,
 
             isInlined: name.startsWith('_'),
             isConditionallyInlined: modifier === SymbolModifiers.CONDITIONAL_INLINE,
@@ -466,8 +472,8 @@ export class LarkDocumentAnalyzer {
      */
     private processTemplateRuleParameters(
         definition: SymbolDefinition,
-        document: vscode.TextDocument,
-        scope: LarkScope,
+        // document: vscode.TextDocument,
+        // scope: LarkScope,
     ): ParameterInfo[] {
         const { body } = definition;
         const match = body.match(LarkDocumentAnalyzer.PATTERNS.TEMPLATE_RULE_DEFINITION);
