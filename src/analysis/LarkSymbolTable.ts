@@ -150,25 +150,28 @@ export class LarkSymbolTable {
      * @param locationOrScope Location where the symbol was used, or scope for backward compatibility
      * @param scope Optional scope context for resolution (when first param is location)
      */
-    markSymbolAsUsed(symbolName: string, locationOrScope: SymbolLocation | Scope, scope?: Scope): void {
-        let resolveScope: Scope;
-        let location: SymbolLocation | undefined;
-
-        // Handle backward compatibility - if second parameter is a Scope
-        if ('type' in locationOrScope && locationOrScope.type) {
-            resolveScope = locationOrScope as Scope;
-            // No location tracking for backward compatibility calls
-        } else {
-            location = locationOrScope as SymbolLocation;
-            resolveScope = scope || this.globalScope;
-        }
-
+    markSymbolAsUsed(symbolName: string, location: SymbolLocation, scope?: Scope): void {
+        const resolveScope = scope || this.globalScope;
         const entry = this.resolveSymbol(symbolName, resolveScope);
+
         if (entry) {
             entry.isUsed = true;
-            if (location) {
-                entry.usages.push(location);
+            if (!entry.usages) {
+                entry.usages = [];
             }
+            entry.usages.push(location);
+        }
+    }
+
+    markSymbolAsIgnored(symbolName: string, location: SymbolLocation, scope?: Scope): void {
+        const resolveScope = scope || this.globalScope;
+        const entry = this.resolveSymbol(symbolName, resolveScope);
+        if (entry) {
+            entry.isIgnored = true;
+            if (!entry.ignoreLocations) {
+                entry.ignoreLocations = [];
+            }
+            entry.ignoreLocations.push(location);
         }
     }
 

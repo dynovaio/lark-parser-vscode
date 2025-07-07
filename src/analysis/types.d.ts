@@ -89,6 +89,12 @@ export interface SymbolTableEntry {
     baseRuleName?: string;
     parameters?: ParameterInfo[];
 
+    // For parameters inside rules
+    isParameter?: boolean;
+    parameterInfo?: ParameterInfo;
+    parameterPosition?: number; // Position in the parameter list (0-based)
+    parentRuleName?: string; // If this is a parameter, the rule it belongs to
+
     // Usage tracking
     usages: SymbolLocation[];
     isUsed: boolean;
