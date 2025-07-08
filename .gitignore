@@ -10,6 +10,7 @@
 !.vscode/tasks.json
 !.vscodeignore
 !.vscode-test.mjs
+!.husky
 
 node_modules/
 dist/
