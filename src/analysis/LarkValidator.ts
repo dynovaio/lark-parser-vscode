@@ -9,8 +9,7 @@ import type { AnalysisResult } from './types.d';
 export class LarkValidator {
     // The validator is stateless and no longer holds a symbol table instance.
 
-    constructor () {
-    }
+    constructor() {}
 
     /**
      * Validates a text document against a given symbol table and returns diagnostics.
@@ -18,7 +17,10 @@ export class LarkValidator {
      * @param analysisResult The symbol table to use for validation.
      * @returns An array of diagnostics.
      */
-    public validate(document: vscode.TextDocument, analysisResult: AnalysisResult): vscode.Diagnostic[] {
+    public validate(
+        document: vscode.TextDocument,
+        analysisResult: AnalysisResult
+    ): vscode.Diagnostic[] {
         if (document.languageId !== 'lark') {
             return [];
         }

@@ -14,6 +14,6 @@ const activate = (context: vscode.ExtensionContext) => {
     );
 };
 
-const deactivate = () => { };
+const deactivate = () => {};
 
 module.exports = { activate, deactivate };

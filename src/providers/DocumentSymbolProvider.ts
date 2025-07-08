@@ -9,7 +9,7 @@ import { LarkDocumentManager } from '../orchestration/LarkDocumentManager';
 export class LarkSymbolProvider implements vscode.DocumentSymbolProvider {
     private manager: LarkDocumentManager;
 
-    constructor (manager: LarkDocumentManager) {
+    constructor(manager: LarkDocumentManager) {
         this.manager = manager;
     }
 

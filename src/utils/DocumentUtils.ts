@@ -21,7 +21,11 @@ export function isTerminalName(symbolName: string): boolean {
  * @param symbolName The symbol name to calculate end position
  * @returns VS Code Range object
  */
-export function createSymbolRange(lineIndex: number, startChar: number, symbolName: string): vscode.Range {
+export function createSymbolRange(
+    lineIndex: number,
+    startChar: number,
+    symbolName: string
+): vscode.Range {
     return new vscode.Range(lineIndex, startChar, lineIndex, startChar + symbolName.length);
 }
 
@@ -50,7 +54,9 @@ export function stripIgnoredContent(text: string): string {
     processedText = processedText.split(/\/\/|->/)[0];
 
     // Strip regex patterns
-    processedText = processedText.replace(/(\/(?:\\.|[^\/\\])*\/[gimsuy]*)/g, (match) => ' '.repeat(match.length));
+    processedText = processedText.replace(/(\/(?:\\.|[^\/\\])*\/[gimsuy]*)/g, (match) =>
+        ' '.repeat(match.length)
+    );
 
     return processedText;
 }

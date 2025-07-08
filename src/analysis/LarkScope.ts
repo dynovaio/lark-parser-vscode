@@ -1,10 +1,9 @@
 import * as vscode from 'vscode';
 import type { Scope, ScopeType, SymbolTableEntry, ParameterInfo } from './types.d';
 
-
 export enum ScopeTypes {
     GLOBAL = 'global',
-    RULE = 'rule',
+    RULE = 'rule'
 }
 
 /**
@@ -15,7 +14,7 @@ export class LarkScope implements Scope {
     public parameters?: Map<string, ParameterInfo>;
     public needsRebuild: boolean = false; // For incremental updates
 
-    constructor (
+    constructor(
         public type: ScopeType,
         public range: vscode.Range,
         public name?: string,

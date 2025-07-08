@@ -1,7 +1,11 @@
 import * as assert from 'assert';
 import * as vscode from 'vscode';
 import { LarkSymbolTable } from '../../../src/analysis/LarkSymbolTable';
-import type { SymbolTableEntry, SymbolLocation, ParameterInfo } from '../../../src/analysis/types.d';
+import type {
+    SymbolTableEntry,
+    SymbolLocation,
+    ParameterInfo
+} from '../../../src/analysis/types.d';
 
 suite('LarkSymbolTable', () => {
     let symbolTable: LarkSymbolTable;
@@ -42,7 +46,10 @@ suite('LarkSymbolTable', () => {
         });
 
         test('should resolve symbol from global scope', () => {
-            const symbolEntry: SymbolTableEntry = createMockSymbolEntry('TEST_TERMINAL', 'terminal');
+            const symbolEntry: SymbolTableEntry = createMockSymbolEntry(
+                'TEST_TERMINAL',
+                'terminal'
+            );
 
             symbolTable.addSymbol(symbolEntry);
 
@@ -167,7 +174,7 @@ suite('LarkSymbolTable', () => {
 
             entry1.isUsed = false; // start rule should be excluded even if unused
             entry2.isUsed = false; // should be included in unused
-            entry3.isUsed = true;  // should not be included
+            entry3.isUsed = true; // should not be included
 
             symbolTable.addSymbol(entry1);
             symbolTable.addSymbol(entry2);
@@ -206,5 +213,4 @@ suite('LarkSymbolTable', () => {
         entry.baseRuleName = baseName;
         return entry;
     }
-
 });

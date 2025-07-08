@@ -10,7 +10,7 @@ export class LarkDocumentManager {
     private validator: LarkValidator;
     private diagnosticCollection: vscode.DiagnosticCollection;
 
-    constructor (context: vscode.ExtensionContext) {
+    constructor(context: vscode.ExtensionContext) {
         this.diagnosticCollection = vscode.languages.createDiagnosticCollection('lark-diagnostics');
         this.documentAnalysisResult = new Map<string, AnalysisResult>();
         this.analyzer = new LarkDocumentAnalyzer();
@@ -21,9 +21,9 @@ export class LarkDocumentManager {
 
     public listen() {
         // Register event listeners that will eventually call handleDocumentChange
-        vscode.workspace.onDidOpenTextDocument(doc => this.handleDocumentChange(doc));
-        vscode.workspace.onDidChangeTextDocument(e => this.handleDocumentChange(e.document));
-        vscode.workspace.onDidCloseTextDocument(doc => {
+        vscode.workspace.onDidOpenTextDocument((doc) => this.handleDocumentChange(doc));
+        vscode.workspace.onDidChangeTextDocument((e) => this.handleDocumentChange(e.document));
+        vscode.workspace.onDidCloseTextDocument((doc) => {
             this.diagnosticCollection.delete(doc.uri);
             this.documentAnalysisResult.delete(doc.uri.toString());
         });

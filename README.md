@@ -10,12 +10,12 @@ Please fork this repository and open a pull request to make grammar tweaks, add 
 ## ✨ Features
 
 - ✅ Syntax highlighting for:
-  - Rule definition
-  - Terminal definition
-  - Directives
-  - Operators
-  - Comments (//, /* ... */, --)
-  - Strings (quoted & backticked)
+    - Rule definition
+    - Terminal definition
+    - Directives
+    - Operators
+    - Comments (//, /_ ... _/, --)
+    - Strings (quoted & backticked)
 - ✅ Markdown embedding support
 - ✅ Custom file icon for `.lark` files
 
@@ -54,7 +54,6 @@ See the list of contributors in our [contributors page ↗][contributors].
 
 This project is licensed under the terms of the Apache-2.0 license. See the
 [LICENSE ↗][license] file.
-
 
 [contributors]: https://github.com/lark-parser/vscode-lark/graphs/contributors
 [changelog]: CHANGELOG.md

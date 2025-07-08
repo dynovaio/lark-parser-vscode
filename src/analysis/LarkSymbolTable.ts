@@ -8,16 +8,15 @@ import type {
     ParameterInfo
 } from './types.d';
 
-
 export enum SymbolTypes {
     TERMINAL = 'terminal',
     RULE = 'rule',
-    UNKNOWN = 'unknown',
+    UNKNOWN = 'unknown'
 }
 
 export enum SymbolModifiers {
     CONDITIONAL_INLINE = '?',
-    PIN = '!',
+    PIN = '!'
 }
 
 /**
@@ -28,7 +27,7 @@ export class LarkSymbolTable implements SymbolTable {
     private globalScope: LarkScope;
     private scopes: Map<string, LarkScope>; // Rule name -> scope
 
-    constructor () {
+    constructor() {
         this.globalScope = new LarkScope('global', new vscode.Range(0, 0, 0, 0));
         this.scopes = new Map();
     }
@@ -190,7 +189,11 @@ export class LarkSymbolTable implements SymbolTable {
      * @param parameters Parameters of the rule (if template)
      * @returns Created rule scope
      */
-    createRuleScope(ruleName: string, range: vscode.Range, parameters?: ParameterInfo[]): LarkScope {
+    createRuleScope(
+        ruleName: string,
+        range: vscode.Range,
+        parameters?: ParameterInfo[]
+    ): LarkScope {
         const ruleScope = new LarkScope('rule', range, ruleName, this.globalScope);
 
         // Add parameters to the scope
@@ -258,7 +261,8 @@ export class LarkSymbolTable implements SymbolTable {
      * @returns DocumentSymbol object
      */
     private convertToDocumentSymbol(entry: SymbolTableEntry): vscode.DocumentSymbol {
-        const symbolKind = entry.type === 'terminal' ? vscode.SymbolKind.Constant : vscode.SymbolKind.Function;
+        const symbolKind =
+            entry.type === 'terminal' ? vscode.SymbolKind.Constant : vscode.SymbolKind.Function;
         const detail = entry.type === 'rule' ? 'rule' : 'terminal';
 
         return new vscode.DocumentSymbol(
@@ -316,9 +320,13 @@ export class LarkSymbolTable implements SymbolTable {
      * Check if one range contains another
      */
     private rangeContains(container: vscode.Range, contained: vscode.Range): boolean {
-        return container.start.line <= contained.start.line &&
+        return (
+            container.start.line <= contained.start.line &&
             container.end.line >= contained.end.line &&
-            (container.start.line < contained.start.line || container.start.character <= contained.start.character) &&
-            (container.end.line > contained.end.line || container.end.character >= contained.end.character);
+            (container.start.line < contained.start.line ||
+                container.start.character <= contained.start.character) &&
+            (container.end.line > contained.end.line ||
+                container.end.character >= contained.end.character)
+        );
     }
 }

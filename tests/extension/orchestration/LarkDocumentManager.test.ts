@@ -11,7 +11,7 @@ suite('LarkDocumentManager', () => {
         mockContext = {
             subscriptions: [],
             workspaceState: {} as vscode.Memento,
-            globalState: {} as vscode.Memento & {setKeysForSync: (keys: string[]) => void},
+            globalState: {} as vscode.Memento & { setKeysForSync: (keys: string[]) => void },
             extensionUri: vscode.Uri.file('/test'),
             extensionPath: '/test',
             asAbsolutePath: (relativePath: string) => '/test/' + relativePath,
@@ -25,7 +25,7 @@ suite('LarkDocumentManager', () => {
             environmentVariableCollection: {} as vscode.GlobalEnvironmentVariableCollection,
             secrets: {} as vscode.SecretStorage,
             extension: {} as vscode.Extension<unknown>,
-            languageModelAccessInformation: {} as vscode.LanguageModelAccessInformation,
+            languageModelAccessInformation: {} as vscode.LanguageModelAccessInformation
         };
 
         manager = new LarkDocumentManager(mockContext);
@@ -34,7 +34,11 @@ suite('LarkDocumentManager', () => {
     /**
      * Helper function to create a mock TextDocument
      */
-    function createMockDocument(content: string, uri: string = 'test://test.lark', languageId: string = 'lark'): vscode.TextDocument {
+    function createMockDocument(
+        content: string,
+        uri: string = 'test://test.lark',
+        languageId: string = 'lark'
+    ): vscode.TextDocument {
         const mockUri = vscode.Uri.parse(uri);
         const lines = content.split('\n');
 
@@ -138,7 +142,11 @@ hello: "hello"
 
             // Initially should return undefined for unknown document
             const initialTable = manager.getSymbolTable(document.uri);
-            assert.strictEqual(initialTable, undefined, 'should return undefined for unknown document');
+            assert.strictEqual(
+                initialTable,
+                undefined,
+                'should return undefined for unknown document'
+            );
         });
 
         test('should handle multiple documents', () => {

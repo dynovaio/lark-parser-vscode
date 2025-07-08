@@ -15,7 +15,10 @@ suite('LarkDocumentAnalyzer', () => {
     /**
      * Helper function to create a mock TextDocument
      */
-    function createMockDocument(content: string, uri: string = 'test://test.lark'): vscode.TextDocument {
+    function createMockDocument(
+        content: string,
+        uri: string = 'test://test.lark'
+    ): vscode.TextDocument {
         const mockUri = vscode.Uri.parse(uri);
         const lines = content.split('\n');
 
@@ -275,7 +278,11 @@ unused: "unused"
             // Check usage locations
             assert.ok(helloRule.usages.length > 0, 'hello should have usage locations');
             assert.ok(worldRule.usages.length > 0, 'world should have usage locations');
-            assert.strictEqual(unusedRule.usages.length, 0, 'unused should have no usage locations');
+            assert.strictEqual(
+                unusedRule.usages.length,
+                0,
+                'unused should have no usage locations'
+            );
         });
 
         test('should track template rule usage', async () => {
@@ -426,11 +433,18 @@ word: WORD ["," | "!"]
             // Check that WS_INLINE is imported and marked as used (due to %ignore)
             const wsInline = symbolTable.resolveSymbol('WS_INLINE');
             assert.ok(wsInline, 'WS_INLINE should be found');
-            assert.strictEqual(wsInline.isUsed, true, 'WS_INLINE should be marked as used due to %ignore directive');
+            assert.strictEqual(
+                wsInline.isUsed,
+                true,
+                'WS_INLINE should be marked as used due to %ignore directive'
+            );
 
             // Check that it's not in the unused symbols list
             const unusedSymbols = symbolTable.getUnusedSymbols();
-            assert.ok(!unusedSymbols.includes('WS_INLINE'), 'WS_INLINE should not be in unused symbols');
+            assert.ok(
+                !unusedSymbols.includes('WS_INLINE'),
+                'WS_INLINE should not be in unused symbols'
+            );
         });
     });
 });

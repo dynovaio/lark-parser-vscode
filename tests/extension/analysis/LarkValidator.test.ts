@@ -16,7 +16,11 @@ suite('LarkValidator', () => {
     /**
      * Helper function to create a mock TextDocument
      */
-    function createMockDocument(content: string, uri: string = 'test://test.lark', languageId: string = 'lark'): vscode.TextDocument {
+    function createMockDocument(
+        content: string,
+        uri: string = 'test://test.lark',
+        languageId: string = 'lark'
+    ): vscode.TextDocument {
         const mockUri = vscode.Uri.parse(uri);
         const lines = content.split('\n');
 
@@ -122,7 +126,7 @@ unused: "unused"
             const diagnostics = validator.validate(document, analysisResult);
 
             // Should have diagnostics for unused symbol
-            const unusedDiagnostics = diagnostics.filter(d => d.message.includes('unused'));
+            const unusedDiagnostics = diagnostics.filter((d) => d.message.includes('unused'));
             assert.ok(unusedDiagnostics.length > 0, 'should detect unused symbols');
         });
 
@@ -137,8 +141,8 @@ unused: "unused"
             const diagnostics = validator.validate(document, analysisResult);
 
             // Should have diagnostic for unused but not for start
-            const startDiagnostics = diagnostics.filter(d => d.message.includes('start'));
-            const unusedDiagnostics = diagnostics.filter(d => d.message.includes('unused'));
+            const startDiagnostics = diagnostics.filter((d) => d.message.includes('start'));
+            const unusedDiagnostics = diagnostics.filter((d) => d.message.includes('unused'));
 
             assert.strictEqual(startDiagnostics.length, 0, 'should not flag start rule as unused');
             assert.ok(unusedDiagnostics.length > 0, 'should flag actual unused symbols');
@@ -158,8 +162,12 @@ word: WORD
             const diagnostics = validator.validate(document, analysisResult);
 
             // Should not have diagnostics for WS_INLINE since it's used in %ignore
-            const wsInlineDiagnostics = diagnostics.filter(d => d.message.includes('WS_INLINE'));
-            assert.strictEqual(wsInlineDiagnostics.length, 0, 'should not flag symbols used in %ignore as unused');
+            const wsInlineDiagnostics = diagnostics.filter((d) => d.message.includes('WS_INLINE'));
+            assert.strictEqual(
+                wsInlineDiagnostics.length,
+                0,
+                'should not flag symbols used in %ignore as unused'
+            );
         });
     });
 
@@ -192,7 +200,11 @@ start: undefined_rule
             };
             const diagnostics = validator.validate(jsDocument, analysisResult);
 
-            assert.strictEqual(diagnostics.length, 0, 'should return empty diagnostics for non-lark documents');
+            assert.strictEqual(
+                diagnostics.length,
+                0,
+                'should return empty diagnostics for non-lark documents'
+            );
         });
     });
 
@@ -204,7 +216,10 @@ start: undefined_rule
             const diagnostics = validator.validate(document, analysisResult);
 
             // Should not throw and should return array
-            assert.ok(Array.isArray(diagnostics), 'should return diagnostics array for empty document');
+            assert.ok(
+                Array.isArray(diagnostics),
+                'should return diagnostics array for empty document'
+            );
         });
 
         test('should handle malformed grammar', async () => {
@@ -217,7 +232,10 @@ this is not valid lark grammar :::
             const diagnostics = validator.validate(document, analysisResult);
 
             // Should not throw
-            assert.ok(Array.isArray(diagnostics), 'should return diagnostics array for malformed grammar');
+            assert.ok(
+                Array.isArray(diagnostics),
+                'should return diagnostics array for malformed grammar'
+            );
         });
     });
 });

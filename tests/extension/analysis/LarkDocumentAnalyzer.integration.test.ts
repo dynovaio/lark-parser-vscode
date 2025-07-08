@@ -26,7 +26,10 @@ suite('LarkDocumentAnalyzer Integration', () => {
     /**
      * Helper function to create a TextDocument from content
      */
-    function createDocument(content: string, uri: string = 'test://test.lark'): vscode.TextDocument {
+    function createDocument(
+        content: string,
+        uri: string = 'test://test.lark'
+    ): vscode.TextDocument {
         const mockUri = vscode.Uri.parse(uri);
         const lines = content.split('\n');
 
@@ -137,11 +140,16 @@ suite('LarkDocumentAnalyzer Integration', () => {
             }
 
             console.log(`Parsed ${allSymbols.length} symbols from calculator grammar`);
-            console.log('Symbol types:', allSymbols.reduce((acc, s) => {
-                acc[s.type] = (acc[s.type] || 0) + 1;
-                return acc;
-            }, {} as Record<string, number>));
-
+            console.log(
+                'Symbol types:',
+                allSymbols.reduce(
+                    (acc, s) => {
+                        acc[s.type] = (acc[s.type] || 0) + 1;
+                        return acc;
+                    },
+                    {} as Record<string, number>
+                )
+            );
         } catch (error) {
             // If test file doesn't exist, skip this test
             if ((error as vscode.FileSystemError).code === 'ENOENT') {
@@ -170,7 +178,6 @@ suite('LarkDocumentAnalyzer Integration', () => {
             }
 
             console.log(`Parsed ${allSymbols.length} symbols from JSON grammar`);
-
         } catch (error) {
             // If test file doesn't exist, skip this test
             if ((error as vscode.FileSystemError).code === 'ENOENT') {
@@ -256,24 +263,34 @@ another_unused: WORD "unused"
         // Get unused symbols
         const unusedSymbols = symbolTable.getUnusedSymbols();
         assert.ok(unusedSymbols.includes('unused_rule'), 'unused_rule should be in unused symbols');
-        assert.ok(unusedSymbols.includes('another_unused'), 'another_unused should be in unused symbols');
+        assert.ok(
+            unusedSymbols.includes('another_unused'),
+            'another_unused should be in unused symbols'
+        );
 
         console.log('Unused symbols:', unusedSymbols);
 
         // Get all symbols by type
         const allSymbols = symbolTable.getAllSymbols();
-        const symbolsByType = allSymbols.reduce((acc, s) => {
-            acc[s.type] = (acc[s.type] || 0) + 1;
-            return acc;
-        }, {} as Record<string, number>);
+        const symbolsByType = allSymbols.reduce(
+            (acc, s) => {
+                acc[s.type] = (acc[s.type] || 0) + 1;
+                return acc;
+            },
+            {} as Record<string, number>
+        );
         console.log('Symbol distribution:', symbolsByType);
         assert.ok(symbolsByType.rule > 0, 'should have rules');
         assert.ok(symbolsByType.terminal > 0, 'should have terminal symbols');
 
-        const symbolsByOrigin = allSymbols.reduce((acc, s) => {
-            acc[s.isImported ? 'imported' : 'local'] = (acc[s.isImported ? 'imported' : 'local'] || 0) + 1;
-            return acc;
-        }, {} as Record<string, number>);
+        const symbolsByOrigin = allSymbols.reduce(
+            (acc, s) => {
+                acc[s.isImported ? 'imported' : 'local'] =
+                    (acc[s.isImported ? 'imported' : 'local'] || 0) + 1;
+                return acc;
+            },
+            {} as Record<string, number>
+        );
         console.log('Symbols by origin:', symbolsByOrigin);
         assert.ok(symbolsByOrigin.local > 0, 'should have local symbols');
         assert.ok(symbolsByOrigin.imported > 0, 'should have imported symbols');
@@ -300,7 +317,7 @@ NUMBER: /\\d+/
         assert.ok(documentSymbols.length > 0, 'should provide document symbols');
 
         // Check that we have both rules and terminals
-        const symbolNames = documentSymbols.map(s => s.name);
+        const symbolNames = documentSymbols.map((s) => s.name);
         assert.ok(symbolNames.includes('start'), 'should include start rule');
         assert.ok(symbolNames.includes('expression'), 'should include expression rule');
         assert.ok(symbolNames.includes('NUMBER'), 'should include NUMBER terminal');

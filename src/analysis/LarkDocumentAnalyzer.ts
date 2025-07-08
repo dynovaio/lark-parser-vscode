@@ -1,6 +1,13 @@
 import * as vscode from 'vscode';
 import { LarkSymbolTable, SymbolTypes, SymbolModifiers } from './LarkSymbolTable';
-import type { AnalysisResult, SymbolDefinition, SymbolTableEntry, SymbolType, ParameterInfo, SymbolLocation } from './types.d';
+import type {
+    AnalysisResult,
+    SymbolDefinition,
+    SymbolTableEntry,
+    SymbolType,
+    ParameterInfo,
+    SymbolLocation
+} from './types.d';
 import { LarkScope, ScopeTypes } from './LarkScope';
 
 /**
@@ -45,7 +52,8 @@ export class LarkDocumentAnalyzer {
         // 4. %import module.rule -> newrule
         // 5. %import module (TERM1, TERM2, rule1, rule2)
         IMPORT_STATEMENT: /^%import\s+(.+)$/,
-        IMPORT_STATEMENT_SINGLE: /^%import\s+([a-z0-9_.]+)\.([a-zA-Z_][a-zA-Z0-9_]*)\s*(?:->\s*([a-zA-Z_][a-zA-Z0-9_]*))?\s*$/,
+        IMPORT_STATEMENT_SINGLE:
+            /^%import\s+([a-z0-9_.]+)\.([a-zA-Z_][a-zA-Z0-9_]*)\s*(?:->\s*([a-zA-Z_][a-zA-Z0-9_]*))?\s*$/,
         IMPORT_STATEMENT_MULTI: /^%import\s+([a-z0-9_.]+)\s*\(\s*([^)]+)\s*\)\s*$/,
 
         // Terminal definitions:
@@ -58,7 +66,8 @@ export class LarkDocumentAnalyzer {
 
         // Template rules:
         // 1. rule_name{param1, param2}: expression (can start with underscore)
-        TEMPLATE_RULE_DEFINITION: /^([?!])?([a-z_][a-z0-9_]*)\s*\{\s*([^}]+)\}(?:\.(\d+))?\s*:\s*(.+)/,
+        TEMPLATE_RULE_DEFINITION:
+            /^([?!])?([a-z_][a-z0-9_]*)\s*\{\s*([^}]+)\}(?:\.(\d+))?\s*:\s*(.+)/,
 
         // Alias statement
         // 1. expression -> alias_name
@@ -138,24 +147,18 @@ export class LarkDocumentAnalyzer {
                 if (definition.body !== '') {
                     lineNumber = lineNumber + definition.endIndex - definition.startIndex;
 
-                    this.processSymbolDefinition(
-                        definition,
-                        document,
-                        analysisResult,
-                        globalScope,
-                    );
+                    this.processSymbolDefinition(definition, document, analysisResult, globalScope);
 
                     continue;
                 }
             }
 
             if (!this.isDirectiveLine(cleanedCurrentLine)) {
-                analysisResult.syntaxErrors.push(
-                    {
-                        message: `Syntax error: unrecognized or illegal expression "${cleanedCurrentLine}"`,
-                        range: this.computeLocation(document, [currentLine], lineNumber, lineNumber).range,
-                    }
-                );
+                analysisResult.syntaxErrors.push({
+                    message: `Syntax error: unrecognized or illegal expression "${cleanedCurrentLine}"`,
+                    range: this.computeLocation(document, [currentLine], lineNumber, lineNumber)
+                        .range
+                });
             }
         }
     }
@@ -167,10 +170,7 @@ export class LarkDocumentAnalyzer {
      * @param startIndex The starting line index to read from
      * @returns A SymbolDefinition object containing the collected lines and metadata
      */
-    private readSymbolDefinition(
-        lines: string[],
-        startIndex: number
-    ): SymbolDefinition {
+    private readSymbolDefinition(lines: string[], startIndex: number): SymbolDefinition {
         let currentLine: string = lines[startIndex];
         let cleanedCurrentLine: string = this.removeComments(currentLine);
 
@@ -251,12 +251,15 @@ export class LarkDocumentAnalyzer {
         } else if (this.isImportLine(body)) {
             symbols = this.processImportStatement(definition, document, scope);
         } else {
-            analysisResult.syntaxErrors.push(
-                {
-                    message: `Syntax error: unrecognized or illegal expression "${body}"`,
-                    range: this.computeLocation(document, definition.lines, definition.startIndex, definition.endIndex).range,
-                }
-            );
+            analysisResult.syntaxErrors.push({
+                message: `Syntax error: unrecognized or illegal expression "${body}"`,
+                range: this.computeLocation(
+                    document,
+                    definition.lines,
+                    definition.startIndex,
+                    definition.endIndex
+                ).range
+            });
         }
 
         for (const symbol of symbols) {
@@ -264,22 +267,17 @@ export class LarkDocumentAnalyzer {
 
             if (!resolvedSymbol) {
                 if (symbol.isTemplate && symbol.parameters?.length === 0) {
-                    analysisResult.syntaxErrors.push(
-                        {
-                            message: `Template rule "${symbol.name}" has no parameters.`,
-                            range: symbol.location.range,
-                        }
-                    );
+                    analysisResult.syntaxErrors.push({
+                        message: `Template rule "${symbol.name}" has no parameters.`,
+                        range: symbol.location.range
+                    });
                 }
                 analysisResult.symbolTable.addSymbol(symbol, scope);
-            }
-            else {
-                analysisResult.syntaxErrors.push(
-                    {
-                        message: `${symbol.type === SymbolTypes.TERMINAL ? 'Terminal' : symbol.type === SymbolTypes.RULE ? 'Rule' : 'Symbol'} "${symbol.name}" is already defined in this scope.`,
-                        range: symbol.location.range,
-                    }
-                );
+            } else {
+                analysisResult.syntaxErrors.push({
+                    message: `${symbol.type === SymbolTypes.TERMINAL ? 'Terminal' : symbol.type === SymbolTypes.RULE ? 'Rule' : 'Symbol'} "${symbol.name}" is already defined in this scope.`,
+                    range: symbol.location.range
+                });
             }
         }
     }
@@ -321,13 +319,10 @@ export class LarkDocumentAnalyzer {
             usages: [],
             isUsed: false,
 
-            isInlined: name.startsWith('_'),
+            isInlined: name.startsWith('_')
         };
 
-        return [
-            symbol,
-            ...this.processAliasWithinSymbolDefinition(definition, document, scope),
-        ];
+        return [symbol, ...this.processAliasWithinSymbolDefinition(definition, document, scope)];
     }
 
     /**
@@ -368,13 +363,10 @@ export class LarkDocumentAnalyzer {
 
             isInlined: name.startsWith('_'),
             isConditionallyInlined: modifier === SymbolModifiers.CONDITIONAL_INLINE,
-            isPinned: modifier === SymbolModifiers.PIN,
+            isPinned: modifier === SymbolModifiers.PIN
         };
 
-        return [
-            symbol,
-            ...this.processAliasWithinSymbolDefinition(definition, document, scope),
-        ];
+        return [symbol, ...this.processAliasWithinSymbolDefinition(definition, document, scope)];
     }
 
     /**
@@ -402,12 +394,7 @@ export class LarkDocumentAnalyzer {
         const [, modifier, name, , priority, body] = match;
         const location = this.computeLocation(document, definitionLines, startIndex, endIndex);
         const parameters = this.processTemplateRuleParameters(definition);
-        const ruleScope = new LarkScope(
-            ScopeTypes.RULE,
-            location.range,
-            name,
-            scope,
-        );
+        const ruleScope = new LarkScope(ScopeTypes.RULE, location.range, name, scope);
         if (parameters.length > 0) {
             for (const param of parameters) {
                 ruleScope.addParameter(param);
@@ -433,13 +420,10 @@ export class LarkDocumentAnalyzer {
 
             isInlined: name.startsWith('_'),
             isConditionallyInlined: modifier === SymbolModifiers.CONDITIONAL_INLINE,
-            isPinned: modifier === SymbolModifiers.PIN,
+            isPinned: modifier === SymbolModifiers.PIN
         };
 
-        return [
-            symbol,
-            ...this.processAliasWithinSymbolDefinition(definition, document, scope),
-        ];
+        return [symbol, ...this.processAliasWithinSymbolDefinition(definition, document, scope)];
     }
 
     /**
@@ -465,13 +449,20 @@ export class LarkDocumentAnalyzer {
             cleanedLine = this.extractAliasDefinitionStatement(cleanedLine) || '';
 
             if (this.isAliasDefinitionLine(cleanedLine)) {
-                const match = cleanedLine.match(LarkDocumentAnalyzer.PATTERNS.ALIAS_DEFINITION) || [];
+                const match =
+                    cleanedLine.match(LarkDocumentAnalyzer.PATTERNS.ALIAS_DEFINITION) || [];
                 let [, body, name] = match;
                 body = body.trim();
                 name = name.trim();
 
                 if (body.trim() && name.trim()) {
-                    const location = this.computeLocation(document, [line], currentIndex, currentIndex, /[^\|\s]/);
+                    const location = this.computeLocation(
+                        document,
+                        [line],
+                        currentIndex,
+                        currentIndex,
+                        /[^\|\s]/
+                    );
 
                     const symbol: SymbolTableEntry = {
                         name: name,
@@ -484,9 +475,7 @@ export class LarkDocumentAnalyzer {
                         scope,
 
                         // Alias definitions are within a symbol definition are considered used
-                        usages: [
-                            location,
-                        ],
+                        usages: [location],
                         isUsed: true,
 
                         isInlined: name.startsWith('_'),
@@ -495,7 +484,7 @@ export class LarkDocumentAnalyzer {
 
                         isAlias: true,
                         originalName: name,
-                        originalType: this.computeSymbolType(name),
+                        originalType: this.computeSymbolType(name)
                     };
 
                     symbols.push(symbol);
@@ -517,7 +506,7 @@ export class LarkDocumentAnalyzer {
      * @returns Array of parameter information objects
      */
     private processTemplateRuleParameters(
-        definition: SymbolDefinition,
+        definition: SymbolDefinition
         // document: vscode.TextDocument,
         // scope: LarkScope,
     ): ParameterInfo[] {
@@ -536,7 +525,10 @@ export class LarkDocumentAnalyzer {
         }
 
         const parametersInfo: ParameterInfo[] = [];
-        const paramNames = params.split(',').map(param => param.trim()).filter(param => param);
+        const paramNames = params
+            .split(',')
+            .map((param) => param.trim())
+            .filter((param) => param);
         const { lines: definitionLines, startIndex } = definition;
 
         for (let i = 0; i < paramNames.length; i++) {
@@ -546,8 +538,11 @@ export class LarkDocumentAnalyzer {
                 position: i,
                 range: new vscode.Range(
                     new vscode.Position(startIndex, definitionLines[0].search(paramName)),
-                    new vscode.Position(startIndex, definitionLines[0].search(paramName) + paramName.length)
-                ),
+                    new vscode.Position(
+                        startIndex,
+                        definitionLines[0].search(paramName) + paramName.length
+                    )
+                )
             };
             parametersInfo.push(paramInfo);
         }
@@ -579,9 +574,9 @@ export class LarkDocumentAnalyzer {
 
         const [, terminals] = match;
 
-        const terminalNames = terminals.split(/\s+/).filter(name => name);
+        const terminalNames = terminals.split(/\s+/).filter((name) => name);
 
-        const symbols: SymbolTableEntry[] = terminalNames.map(name => ({
+        const symbols: SymbolTableEntry[] = terminalNames.map((name) => ({
             name,
             priority: 0,
             body: '',
@@ -598,7 +593,7 @@ export class LarkDocumentAnalyzer {
             isConditionallyInlined: false,
             isPinned: false,
 
-            isDeclared: true,
+            isDeclared: true
         }));
 
         return symbols;
@@ -621,7 +616,9 @@ export class LarkDocumentAnalyzer {
         const { lines: definitionLines, body: definitionBody, startIndex, endIndex } = definition;
 
         // Handle single import statements
-        const matchSingle = definitionBody.match(LarkDocumentAnalyzer.PATTERNS.IMPORT_STATEMENT_SINGLE);
+        const matchSingle = definitionBody.match(
+            LarkDocumentAnalyzer.PATTERNS.IMPORT_STATEMENT_SINGLE
+        );
         if (matchSingle) {
             const [, moduleName, symbolName, newSymbolName] = matchSingle;
 
@@ -648,19 +645,21 @@ export class LarkDocumentAnalyzer {
 
                 isAlias: !!newSymbolName,
                 originalName: symbolName,
-                originalType: this.computeSymbolType(symbolName),
+                originalType: this.computeSymbolType(symbolName)
             };
 
             return [symbol];
         }
 
         // Handle multi import statements
-        const multiMatch = definitionBody.match(LarkDocumentAnalyzer.PATTERNS.IMPORT_STATEMENT_MULTI);
+        const multiMatch = definitionBody.match(
+            LarkDocumentAnalyzer.PATTERNS.IMPORT_STATEMENT_MULTI
+        );
 
         if (multiMatch) {
             const [, moduleName, symbolNames] = multiMatch;
 
-            const symbols = symbolNames.split(',').map(symbolName => {
+            const symbols = symbolNames.split(',').map((symbolName) => {
                 const name = symbolName.trim();
 
                 return {
@@ -681,7 +680,7 @@ export class LarkDocumentAnalyzer {
 
                     isImported: true,
                     importSource: moduleName,
-                    importName: symbolName,
+                    importName: symbolName
                 };
             });
 
@@ -720,22 +719,49 @@ export class LarkDocumentAnalyzer {
             const currentLine = lines[lineNumber];
             const cleanedCurrentLine = this.removeComments(currentLine);
 
-            console.log(`collectSymbolUsages :: ${(lineNumber + 1).toString().padStart(4, '0')} - "${currentLine}"`);
+            console.log(
+                `collectSymbolUsages :: ${(lineNumber + 1).toString().padStart(4, '0')} - "${currentLine}"`
+            );
 
             if (this.isSymbolDefinitionLine(cleanedCurrentLine)) {
-                console.log(`collectSymbolUsages :: ${(lineNumber + 1).toString().padStart(4, '0')} - symbol definition line found: "${cleanedCurrentLine}"`);
-                const [processLines, definedSymbolName] = await this.processSymbolUsagesWithinSymbolDefinitions(lines, lineNumber, document, analysisResult, globalScope);
-                console.log(`collectSymbolUsages :: ${(lineNumber + 1).toString().padStart(4, '0')} - ${definedSymbolName} - processed ${processLines} lines for symbol definition`);
-                console.log(`collectSymbolUsages :: ${(lineNumber + 1).toString().padStart(4, '0')} - ${definedSymbolName} - jumping to line ${lineNumber + 1 + processLines} after processing symbol definition`);
+                console.log(
+                    `collectSymbolUsages :: ${(lineNumber + 1).toString().padStart(4, '0')} - symbol definition line found: "${cleanedCurrentLine}"`
+                );
+                const [processLines, definedSymbolName] =
+                    await this.processSymbolUsagesWithinSymbolDefinitions(
+                        lines,
+                        lineNumber,
+                        document,
+                        analysisResult,
+                        globalScope
+                    );
+                console.log(
+                    `collectSymbolUsages :: ${(lineNumber + 1).toString().padStart(4, '0')} - ${definedSymbolName} - processed ${processLines} lines for symbol definition`
+                );
+                console.log(
+                    `collectSymbolUsages :: ${(lineNumber + 1).toString().padStart(4, '0')} - ${definedSymbolName} - jumping to line ${lineNumber + 1 + processLines} after processing symbol definition`
+                );
                 // lineNumber += processLines - 1; // Adjust line number based on symbol definition processing
                 continue; // Skip to the next line after processing symbol definitions
             }
 
             if (this.isDirectiveLine(cleanedCurrentLine)) {
-                console.log(`collectSymbolUsages :: ${(lineNumber + 1).toString().padStart(4, '0')} - directive line found: "${cleanedCurrentLine}"`);
-                const processLines = await this.processSymbolUsagesWithinDirectives(lines, lineNumber, document, analysisResult, globalScope);
-                console.log(`collectSymbolUsages :: ${(lineNumber + 1).toString().padStart(4, '0')} - processed ${processLines} lines for directive`);
-                console.log(`collectSymbolUsages :: ${(lineNumber + 1).toString().padStart(4, '0')} - jumping to line ${(lineNumber + 1 + processLines).toString().padStart(4, '0')} after processing directive`);
+                console.log(
+                    `collectSymbolUsages :: ${(lineNumber + 1).toString().padStart(4, '0')} - directive line found: "${cleanedCurrentLine}"`
+                );
+                const processLines = await this.processSymbolUsagesWithinDirectives(
+                    lines,
+                    lineNumber,
+                    document,
+                    analysisResult,
+                    globalScope
+                );
+                console.log(
+                    `collectSymbolUsages :: ${(lineNumber + 1).toString().padStart(4, '0')} - processed ${processLines} lines for directive`
+                );
+                console.log(
+                    `collectSymbolUsages :: ${(lineNumber + 1).toString().padStart(4, '0')} - jumping to line ${(lineNumber + 1 + processLines).toString().padStart(4, '0')} after processing directive`
+                );
                 // lineNumber += processLines - 1; // Adjust line number based on directive processing
                 continue; // Skip to the next line after processing directives
             }
@@ -753,11 +779,19 @@ export class LarkDocumentAnalyzer {
      * @param scope The scope to search for symbols in
      * @returns Promise resolving to the number of lines processed
      */
-    private async processSymbolUsagesWithinSymbolDefinitions(lines: string[], startIndex: number, document: vscode.TextDocument, analysisResult: AnalysisResult, scope: LarkScope): Promise<[number, string|null]> {
+    private async processSymbolUsagesWithinSymbolDefinitions(
+        lines: string[],
+        startIndex: number,
+        document: vscode.TextDocument,
+        analysisResult: AnalysisResult,
+        scope: LarkScope
+    ): Promise<[number, string | null]> {
         const currentLine: string = lines[startIndex];
         const cleanedCurrentLine: string = this.removeComments(currentLine);
 
-        console.log(`processSymbolUsagesWithinSymbolDefinitions :: ${(startIndex + 1).toString().padStart(4, '0')} - "${currentLine}"`);
+        console.log(
+            `processSymbolUsagesWithinSymbolDefinitions :: ${(startIndex + 1).toString().padStart(4, '0')} - "${currentLine}"`
+        );
 
         let definedSymbol: SymbolTableEntry | null = null;
         let usedSymbol: SymbolTableEntry | null = null;
@@ -765,7 +799,9 @@ export class LarkDocumentAnalyzer {
         let symbolName: string = '';
 
         if (this.isTemplateRuleDefinitionLine(cleanedCurrentLine)) {
-            match = cleanedCurrentLine.match(LarkDocumentAnalyzer.PATTERNS.TEMPLATE_RULE_DEFINITION);
+            match = cleanedCurrentLine.match(
+                LarkDocumentAnalyzer.PATTERNS.TEMPLATE_RULE_DEFINITION
+            );
             symbolName = match ? match[2] : '';
 
             definedSymbol = analysisResult.symbolTable.resolveSymbol(symbolName, scope);
@@ -790,12 +826,16 @@ export class LarkDocumentAnalyzer {
             const endLineIndex = definedSymbol.location.range.end.line;
             const definitionLines = lines.slice(startLineIndex, endLineIndex + 1);
 
-            console.log(`processSymbolUsagesWithinSymbolDefinitions :: Processing symbol definition "${definedSymbol.name}" from line ${startLineIndex + 1} to ${endLineIndex + 1}`);
+            console.log(
+                `processSymbolUsagesWithinSymbolDefinitions :: Processing symbol definition "${definedSymbol.name}" from line ${startLineIndex + 1} to ${endLineIndex + 1}`
+            );
 
             let currentLineIndex = startLineIndex;
 
             for (const rawLine of definitionLines) {
-                console.log(`processSymbolUsagesWithinSymbolDefinitions :: ${definedSymbol.name} - ${(currentLineIndex + 1).toString().padStart(4, '0')}: "${rawLine}"`);
+                console.log(
+                    `processSymbolUsagesWithinSymbolDefinitions :: ${definedSymbol.name} - ${(currentLineIndex + 1).toString().padStart(4, '0')}: "${rawLine}"`
+                );
 
                 let body = this.removeComments(rawLine);
 
@@ -827,11 +867,19 @@ export class LarkDocumentAnalyzer {
                 // Apply masking before searching for symbol references
                 let maskedBody = this.maskLiterals(body);
 
-                console.log(`processSymbolUsagesWithinSymbolDefinitions :: ${definedSymbol.name} - ${body}`);
-                console.log(`processSymbolUsagesWithinSymbolDefinitions :: ${definedSymbol.name} - ${maskedBody}`);
+                console.log(
+                    `processSymbolUsagesWithinSymbolDefinitions :: ${definedSymbol.name} - ${body}`
+                );
+                console.log(
+                    `processSymbolUsagesWithinSymbolDefinitions :: ${definedSymbol.name} - ${maskedBody}`
+                );
 
-                for (const match of maskedBody.matchAll(LarkDocumentAnalyzer.PATTERNS.SYMBOL_REFERENCE)) {
-                    console.log(`processSymbolUsagesWithinSymbolDefinitions :: ${definedSymbol.name} - Found symbol reference: "${match[0]}" at index ${match.index}`);
+                for (const match of maskedBody.matchAll(
+                    LarkDocumentAnalyzer.PATTERNS.SYMBOL_REFERENCE
+                )) {
+                    console.log(
+                        `processSymbolUsagesWithinSymbolDefinitions :: ${definedSymbol.name} - Found symbol reference: "${match[0]}" at index ${match.index}`
+                    );
 
                     symbolName = match[1];
                     usedSymbol = analysisResult.symbolTable.resolveSymbol(symbolName, scope);
@@ -851,41 +899,49 @@ export class LarkDocumentAnalyzer {
                     maskedBody = maskedBody.slice(match.index || 0 + match[0].length).trim();
 
                     if (usedSymbol) {
-                        console.log(`processSymbolUsagesWithinSymbolDefinitions :: ${definedSymbol.name} - Symbol found in table:`, usedSymbol);
-
-                        analysisResult.symbolTable.markSymbolAsUsed(
-                            symbolName,
-                            location,
-                            scope
+                        console.log(
+                            `processSymbolUsagesWithinSymbolDefinitions :: ${definedSymbol.name} - Symbol found in table:`,
+                            usedSymbol
                         );
+
+                        analysisResult.symbolTable.markSymbolAsUsed(symbolName, location, scope);
                     } else {
                         if (definedSymbol.isTemplate) {
+                            console.log(
+                                `processSymbolUsagesWithinSymbolDefinitions :: ${definedSymbol.name} - Checking if symbol is a parameter of a template rule:`,
+                                symbolName
+                            );
 
-                            console.log(`processSymbolUsagesWithinSymbolDefinitions :: ${definedSymbol.name} - Checking if symbol is a parameter of a template rule:`, symbolName);
-
-                            const parameterInfo = definedSymbol.parameters?.find(param => param.name === symbolName);
+                            const parameterInfo = definedSymbol.parameters?.find(
+                                (param) => param.name === symbolName
+                            );
                             if (parameterInfo) {
-                                console.log(`processSymbolUsagesWithinSymbolDefinitions :: ${definedSymbol.name} - Symbol is a parameter, skipping:`, symbolName);
+                                console.log(
+                                    `processSymbolUsagesWithinSymbolDefinitions :: ${definedSymbol.name} - Symbol is a parameter, skipping:`,
+                                    symbolName
+                                );
                                 continue; // Skip parameters, they are not undefined symbols
                             }
                         }
 
-                        console.log(`processSymbolUsagesWithinSymbolDefinitions :: ${definedSymbol.name} - Handling undefined symbol:`, symbolName);
-
-                        this.handleUndefinedSymbol(
-                            symbolName,
-                            location,
-                            scope,
-                            analysisResult
+                        console.log(
+                            `processSymbolUsagesWithinSymbolDefinitions :: ${definedSymbol.name} - Handling undefined symbol:`,
+                            symbolName
                         );
+
+                        this.handleUndefinedSymbol(symbolName, location, scope, analysisResult);
                     }
                 }
 
                 currentLineIndex++;
             }
 
-            console.log(`processSymbolUsagesWithinSymbolDefinitions :: ${definedSymbol.name} - Processed symbol definition "${definedSymbol.name}" from line ${startLineIndex + 1} to ${endLineIndex + 1}`);
-            console.log(`processSymbolUsagesWithinSymbolDefinitions :: ${definedSymbol.name} - Total lines processed: ${endLineIndex - startLineIndex + 1}`);
+            console.log(
+                `processSymbolUsagesWithinSymbolDefinitions :: ${definedSymbol.name} - Processed symbol definition "${definedSymbol.name}" from line ${startLineIndex + 1} to ${endLineIndex + 1}`
+            );
+            console.log(
+                `processSymbolUsagesWithinSymbolDefinitions :: ${definedSymbol.name} - Total lines processed: ${endLineIndex - startLineIndex + 1}`
+            );
 
             return [endLineIndex - startIndex + 1, definedSymbol.name];
         }
@@ -903,7 +959,13 @@ export class LarkDocumentAnalyzer {
      * @param scope The scope to search for symbols in
      * @returns Promise resolving to the number of lines processed
      */
-    private async processSymbolUsagesWithinDirectives(lines: string[], startIndex: number, document: vscode.TextDocument, analysisResult: AnalysisResult, scope: LarkScope): Promise<number> {
+    private async processSymbolUsagesWithinDirectives(
+        lines: string[],
+        startIndex: number,
+        document: vscode.TextDocument,
+        analysisResult: AnalysisResult,
+        scope: LarkScope
+    ): Promise<number> {
         const currentLine = lines[startIndex];
         const cleanedCurrentLine = this.removeComments(currentLine);
 
@@ -932,27 +994,13 @@ export class LarkDocumentAnalyzer {
             };
             const symbol = analysisResult.symbolTable.resolveSymbol(terminalName, scope);
             if (symbol) {
-                analysisResult.symbolTable.markSymbolAsUsed(
-                    terminalName,
-                    location,
-                    scope
-                );
-                analysisResult.symbolTable.markSymbolAsIgnored(
-                    terminalName,
-                    location,
-                    scope
-                );
+                analysisResult.symbolTable.markSymbolAsUsed(terminalName, location, scope);
+                analysisResult.symbolTable.markSymbolAsIgnored(terminalName, location, scope);
             } else {
-                this.handleUndefinedSymbol(
-                    terminalName,
-                    location,
-                    scope,
-                    analysisResult,
-                    {
-                        isIgnored: true,
-                        ignoreLocations: [location],
-                    }
-                );
+                this.handleUndefinedSymbol(terminalName, location, scope, analysisResult, {
+                    isIgnored: true,
+                    ignoreLocations: [location]
+                });
             }
         }
 
@@ -973,7 +1021,7 @@ export class LarkDocumentAnalyzer {
             undefinedSymbol = {
                 ...undefinedSymbol,
                 ...extraAttributes,
-                usages: [...undefinedSymbol.usages, location],
+                usages: [...undefinedSymbol.usages, location]
             };
         } else {
             undefinedSymbol = {
@@ -989,7 +1037,7 @@ export class LarkDocumentAnalyzer {
 
                 isInlined: symbolName.startsWith('_'),
 
-                ...extraAttributes,
+                ...extraAttributes
             };
         }
 
@@ -1017,13 +1065,15 @@ export class LarkDocumentAnalyzer {
      * @returns True if the line is a symbol definition line, false otherwise
      */
     private isSymbolDefinitionLine(line: string): boolean {
-        return LarkDocumentAnalyzer.PATTERNS.TERMINAL_DEFINITION.test(line) ||
+        return (
+            LarkDocumentAnalyzer.PATTERNS.TERMINAL_DEFINITION.test(line) ||
             LarkDocumentAnalyzer.PATTERNS.RULE_DEFINITION.test(line) ||
             LarkDocumentAnalyzer.PATTERNS.TEMPLATE_RULE_DEFINITION.test(line) ||
             this.isImportLine(line) ||
             this.isDeclareLine(line) ||
             this.isOverrideLine(line) ||
-            this.isExtendLine(line);
+            this.isExtendLine(line)
+        );
     }
 
     /**
@@ -1168,7 +1218,8 @@ export class LarkDocumentAnalyzer {
             const match = textLine.match(LarkDocumentAnalyzer.PATTERNS.TERMINAL_DEFINITION) || [];
             const body = match.at(-1)?.trim() || '';
 
-            const [aliasStatement,] = body.match(LarkDocumentAnalyzer.PATTERNS.ALIAS_DEFINITION) || [];
+            const [aliasStatement] =
+                body.match(LarkDocumentAnalyzer.PATTERNS.ALIAS_DEFINITION) || [];
             if (aliasStatement) {
                 return aliasStatement.trim();
             }
@@ -1178,27 +1229,32 @@ export class LarkDocumentAnalyzer {
             const match = textLine.match(LarkDocumentAnalyzer.PATTERNS.RULE_DEFINITION) || [];
             const body = match.at(-1)?.trim() || '';
 
-            const [aliasStatement,] = body.match(LarkDocumentAnalyzer.PATTERNS.ALIAS_DEFINITION) || [];
+            const [aliasStatement] =
+                body.match(LarkDocumentAnalyzer.PATTERNS.ALIAS_DEFINITION) || [];
             if (aliasStatement) {
                 return aliasStatement.trim();
             }
         }
 
         if (this.isTemplateRuleDefinitionLine(textLine)) {
-            const match = textLine.match(LarkDocumentAnalyzer.PATTERNS.TEMPLATE_RULE_DEFINITION) || [];
+            const match =
+                textLine.match(LarkDocumentAnalyzer.PATTERNS.TEMPLATE_RULE_DEFINITION) || [];
             const body = match.at(-1)?.trim() || '';
 
-            const [aliasStatement,] = body.match(LarkDocumentAnalyzer.PATTERNS.ALIAS_DEFINITION) || [];
+            const [aliasStatement] =
+                body.match(LarkDocumentAnalyzer.PATTERNS.ALIAS_DEFINITION) || [];
             if (aliasStatement) {
                 return aliasStatement.trim();
             }
         }
 
         if (this.isContinuationLine(textLine)) {
-            const match = textLine.match(LarkDocumentAnalyzer.PATTERNS.CONTINUATION_LINE_REFERENCE) || [];
+            const match =
+                textLine.match(LarkDocumentAnalyzer.PATTERNS.CONTINUATION_LINE_REFERENCE) || [];
             const body = (match.at(-1)?.trim() || '').replace(/^\|\s*/, '').trim();
 
-            const [aliasStatement,] = body.match(LarkDocumentAnalyzer.PATTERNS.ALIAS_DEFINITION) || [];
+            const [aliasStatement] =
+                body.match(LarkDocumentAnalyzer.PATTERNS.ALIAS_DEFINITION) || [];
             if (aliasStatement) {
                 return aliasStatement.trim();
             }
@@ -1217,7 +1273,13 @@ export class LarkDocumentAnalyzer {
      * @param startMatcher Optional regex to find the actual start position within the first line
      * @returns A SymbolLocation object with range and URI information
      */
-    private computeLocation(document: vscode.TextDocument, lines: string[], startIndex: number, endIndex: number, startMatcher: RegExp = /[^\s]/): SymbolLocation {
+    private computeLocation(
+        document: vscode.TextDocument,
+        lines: string[],
+        startIndex: number,
+        endIndex: number,
+        startMatcher: RegExp = /[^\s]/
+    ): SymbolLocation {
         const startLine = lines[0];
         const endLine = lines[lines.length - 1];
 
@@ -1264,9 +1326,7 @@ export class LarkDocumentAnalyzer {
             return match.replace(/./g, '*');
         };
 
-        return line
-            .replace(STRING_LITERAL, mask)
-            .replace(REGEX_LITERAL, mask);
+        return line.replace(STRING_LITERAL, mask).replace(REGEX_LITERAL, mask);
     }
 
     /**

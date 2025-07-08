@@ -19,10 +19,7 @@
         "resolveJsonModule": true,
         "resolvePackageJsonExports": true,
         "resolvePackageJsonImports": true,
-        "rootDirs": [
-            "src",
-            "tests"
-        ],
+        "rootDirs": ["src", "tests"],
         // Emit
         "declaration": true,
         "declarationMap": true,
@@ -42,20 +39,10 @@
         // Language and Environment
         "module": "Node16",
         "target": "ES2022",
-        "lib": [
-            "ES2022"
-        ],
+        "lib": ["ES2022"]
         // "experimentalDecorators": true,
         // "useDefineForClassFields": true,
     },
-    "include": [
-        "src/**/*",
-        "tests/**/*"
-    ],
-    "exclude": [
-        "node_modules",
-        "out",
-        "dist",
-        ".temporary-tests"
-    ]
+    "include": ["src/**/*", "tests/**/*"],
+    "exclude": ["node_modules", "out", "dist", ".temporary-tests"]
 }
