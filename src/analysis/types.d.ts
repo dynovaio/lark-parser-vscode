@@ -124,6 +124,10 @@ export interface SymbolTableEntry {
     isAlias?: boolean;
     originalName?: string;
     originalType?: string;
+
+    // Detected known errors
+    hasSyntaxError?: boolean;
+    syntaxError?: SyntaxError;
 }
 
 export interface SymbolTable {
@@ -140,7 +144,7 @@ export interface SymbolTable {
     validateParameterArguments(ruleName: string, arguments: string[], scope?: Scope): ValidationResult[];
     markSymbolAsUsed(symbolName: string, location: SymbolLocation, scope?: Scope): void;
     markSymbolAsIgnored(symbolName: string, location: SymbolLocation, scope?: Scope): void;
-    addSymbol(entry: SymbolTableEntry): void;
+    addSymbol(entry: SymbolTableEntry, scope?: Scope): void;
     createRuleScope(ruleName: string, range: vscode.Range, parameters?: ParameterInfo[]): Scope;
     getAllSymbols(): SymbolTableEntry[];
     // private findTemplateRuleByBaseName(baseName: string, scope: Scope): SymbolTableEntry | null;
@@ -153,6 +157,11 @@ export interface SymbolTable {
 
 export type UndefinedSymbolTable = Map<string, SymbolTableEntry>;
 
+export interface SyntaxError {
+    message: string;
+    range: vscode.Range;
+}
+
 // ============================================================================
 // VALIDATION AND ANALYSIS INTERFACES
 // ============================================================================
@@ -163,6 +172,7 @@ export type UndefinedSymbolTable = Map<string, SymbolTableEntry>;
 export interface AnalysisResult {
     symbolTable: SymbolTable;
     undefinedSymbolTable: UndefinedSymbolTable;
+    syntaxErrors: SyntaxError[];
 }
 
 /**

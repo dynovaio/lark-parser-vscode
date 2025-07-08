@@ -25,7 +25,8 @@ export class LarkValidator {
 
         const allDiagnostics = [
             ...this.detectUnusedSymbols(analysisResult),
-            ...this.detectUndefinedSymbols(analysisResult)
+            ...this.detectUndefinedSymbols(analysisResult),
+            ...this.detectSyntaxErrors(analysisResult)
         ];
 
         return allDiagnostics;
@@ -45,7 +46,7 @@ export class LarkValidator {
                 const range = symbol.location.range;
                 const diagnostic = new vscode.Diagnostic(
                     range,
-                    `Unused grammar symbol '${symbolName}'`,
+                    `Unused ${symbol.type === SymbolTypes.RULE ? 'rule' : symbol.type === SymbolTypes.TERMINAL ? 'terminal' : 'symbol'} '${symbolName}'`,
                     vscode.DiagnosticSeverity.Warning
                 );
                 diagnostics.push(diagnostic);
@@ -63,25 +64,41 @@ export class LarkValidator {
         const undefinedSymbolTable = analysisResult.undefinedSymbolTable;
 
         for (const [, symbolEntry] of undefinedSymbolTable.entries()) {
-            let errorMessage = `Invalid definition name '${symbolEntry.name}'`;
+            let errorMessage = `Undefined symbol '${symbolEntry.name}'`;
 
             if (symbolEntry.type === SymbolTypes.TERMINAL) {
-                errorMessage = `Invalid terminal name '${symbolEntry.name}'`;
+                errorMessage = `Undefined terminal '${symbolEntry.name}'`;
             }
 
             if (symbolEntry.type === SymbolTypes.RULE) {
-                errorMessage = `Invalid rule name '${symbolEntry.name}'`;
+                errorMessage = `Undefined rule '${symbolEntry.name}'`;
             }
 
-            const diagnostic = new vscode.Diagnostic(
-                symbolEntry.location.range,
-                errorMessage,
-                vscode.DiagnosticSeverity.Error
-            );
-
-            diagnostics.push(diagnostic);
+            for (const usage of symbolEntry.usages) {
+                if (usage.range) {
+                    const diagnostic = new vscode.Diagnostic(
+                        usage.range,
+                        errorMessage,
+                        vscode.DiagnosticSeverity.Error
+                    );
+                    diagnostics.push(diagnostic);
+                }
+            }
         }
 
+        return diagnostics;
+    }
+
+    private detectSyntaxErrors(analysisResult: AnalysisResult): vscode.Diagnostic[] {
+        const diagnostics: vscode.Diagnostic[] = [];
+        for (const error of analysisResult.syntaxErrors) {
+            const diagnostic = new vscode.Diagnostic(
+                error.range,
+                error.message,
+                vscode.DiagnosticSeverity.Error
+            );
+            diagnostics.push(diagnostic);
+        }
         return diagnostics;
     }
 }

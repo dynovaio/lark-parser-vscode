@@ -24,7 +24,7 @@ complex_expr: comprehension{expr}
             | other_param_rule{value}
 
 // Regular rules (should still work)
-regular_rule: "content" TERMINAL
+regular_rule: "content" _TERMINAL
 ?conditional_rule: content
 !pinned_rule: content
 
@@ -90,4 +90,4 @@ _empty_with_tabs{	}: "empty with tabs"
 // Complex combinations
 _complex{ first_param , second_param }: first_param second_param
 ?_optional_spaced{ item , separator }: item separator
-!_pinned_spaced{ content , wrapper }: wrapper content wrapper
+!_pinned_spaced{ content , wrapper }: wrapper content rapper

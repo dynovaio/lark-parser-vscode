@@ -191,6 +191,7 @@ start: undefined_rule
             const analysisResult = {
                 symbolTable: new LarkSymbolTable(),
                 undefinedSymbolTable: new Map(),
+                syntaxErrors: []
             };
             const diagnostics = validator.validate(jsDocument, analysisResult);
 
