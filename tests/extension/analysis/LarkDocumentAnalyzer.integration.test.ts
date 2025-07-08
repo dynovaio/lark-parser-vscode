@@ -144,7 +144,7 @@ suite('LarkDocumentAnalyzer Integration', () => {
 
         } catch (error) {
             // If test file doesn't exist, skip this test
-            if ((error as any).code === 'ENOENT') {
+            if ((error as vscode.FileSystemError).code === 'ENOENT') {
                 console.log('Calculator test grammar not found, skipping test');
                 return;
             }
@@ -173,7 +173,7 @@ suite('LarkDocumentAnalyzer Integration', () => {
 
         } catch (error) {
             // If test file doesn't exist, skip this test
-            if ((error as any).code === 'ENOENT') {
+            if ((error as vscode.FileSystemError).code === 'ENOENT') {
                 console.log('JSON test grammar not found, skipping test');
                 return;
             }

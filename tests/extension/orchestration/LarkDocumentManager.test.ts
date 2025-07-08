@@ -10,8 +10,8 @@ suite('LarkDocumentManager', () => {
         // Create a mock extension context
         mockContext = {
             subscriptions: [],
-            workspaceState: {} as any,
-            globalState: {} as any,
+            workspaceState: {} as vscode.Memento,
+            globalState: {} as vscode.Memento & {setKeysForSync: (keys: string[]) => void},
             extensionUri: vscode.Uri.file('/test'),
             extensionPath: '/test',
             asAbsolutePath: (relativePath: string) => '/test/' + relativePath,
@@ -22,10 +22,10 @@ suite('LarkDocumentManager', () => {
             logUri: vscode.Uri.file('/test/log'),
             logPath: '/test/log',
             extensionMode: vscode.ExtensionMode.Test,
-            environmentVariableCollection: {} as any,
-            secrets: {} as any,
-            extension: {} as any,
-            languageModelAccessInformation: {} as any
+            environmentVariableCollection: {} as vscode.GlobalEnvironmentVariableCollection,
+            secrets: {} as vscode.SecretStorage,
+            extension: {} as vscode.Extension<unknown>,
+            languageModelAccessInformation: {} as vscode.LanguageModelAccessInformation,
         };
 
         manager = new LarkDocumentManager(mockContext);
@@ -34,7 +34,7 @@ suite('LarkDocumentManager', () => {
     /**
      * Helper function to create a mock TextDocument
      */
-    function createMockDocument(content: string, uri: string = 'test://test.lark'): vscode.TextDocument {
+    function createMockDocument(content: string, uri: string = 'test://test.lark', languageId: string = 'lark'): vscode.TextDocument {
         const mockUri = vscode.Uri.parse(uri);
         const lines = content.split('\n');
 
@@ -42,7 +42,7 @@ suite('LarkDocumentManager', () => {
             uri: mockUri,
             fileName: mockUri.fsPath,
             isUntitled: false,
-            languageId: 'lark',
+            languageId: languageId,
             version: 1,
             isDirty: false,
             isClosed: false,
@@ -157,10 +157,7 @@ hello: "hello"
     suite('Non-Lark Documents', () => {
         test('should ignore non-lark documents', () => {
             const content = `console.log("not lark");`;
-            const jsDocument = createMockDocument(content, 'test://test.js');
-
-            // Override languageId to simulate non-lark document
-            (jsDocument as any).languageId = 'javascript';
+            const jsDocument = createMockDocument(content, 'test://test.js', 'javascript');
 
             // Should not process non-lark documents
             const symbolTable = manager.getSymbolTable(jsDocument.uri);

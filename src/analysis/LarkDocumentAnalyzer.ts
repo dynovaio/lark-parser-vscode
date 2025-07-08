@@ -132,18 +132,24 @@ export class LarkDocumentAnalyzer {
                 continue;
             }
 
-            const definition = this.readSymbolDefinition(lines, lineNumber);
+            if (this.isSymbolDefinitionLine(cleanedCurrentLine)) {
+                const definition = this.readSymbolDefinition(lines, lineNumber);
 
-            if (definition.body !== '') {
-                lineNumber = lineNumber + definition.endIndex - definition.startIndex;
+                if (definition.body !== '') {
+                    lineNumber = lineNumber + definition.endIndex - definition.startIndex;
 
-                this.processSymbolDefinition(
-                    definition,
-                    document,
-                    analysisResult,
-                    globalScope,
-                );
-            } else {
+                    this.processSymbolDefinition(
+                        definition,
+                        document,
+                        analysisResult,
+                        globalScope,
+                    );
+
+                    continue;
+                }
+            }
+
+            if (!this.isDirectiveLine(cleanedCurrentLine)) {
                 analysisResult.syntaxErrors.push(
                     {
                         message: `Syntax error: unrecognized or illegal expression "${cleanedCurrentLine}"`,
@@ -454,7 +460,7 @@ export class LarkDocumentAnalyzer {
         const symbols: SymbolTableEntry[] = [];
         let currentIndex = startIndex;
 
-        for (let line of definitionLines) {
+        for (const line of definitionLines) {
             let cleanedLine = this.removeComments(line);
             cleanedLine = this.extractAliasDefinitionStatement(cleanedLine) || '';
 
@@ -788,7 +794,7 @@ export class LarkDocumentAnalyzer {
 
             let currentLineIndex = startLineIndex;
 
-            for (let rawLine of definitionLines) {
+            for (const rawLine of definitionLines) {
                 console.log(`processSymbolUsagesWithinSymbolDefinitions :: ${definedSymbol.name} - ${(currentLineIndex + 1).toString().padStart(4, '0')}: "${rawLine}"`);
 
                 let body = this.removeComments(rawLine);
@@ -1159,8 +1165,8 @@ export class LarkDocumentAnalyzer {
      */
     private extractAliasDefinitionStatement(textLine: string): string | null {
         if (this.isTerminalDefinitionLine(textLine)) {
-            let match = textLine.match(LarkDocumentAnalyzer.PATTERNS.TERMINAL_DEFINITION) || [];
-            let body = match.at(-1)?.trim() || '';
+            const match = textLine.match(LarkDocumentAnalyzer.PATTERNS.TERMINAL_DEFINITION) || [];
+            const body = match.at(-1)?.trim() || '';
 
             const [aliasStatement,] = body.match(LarkDocumentAnalyzer.PATTERNS.ALIAS_DEFINITION) || [];
             if (aliasStatement) {
@@ -1169,8 +1175,8 @@ export class LarkDocumentAnalyzer {
         }
 
         if (this.isRuleDefinitionLine(textLine)) {
-            let match = textLine.match(LarkDocumentAnalyzer.PATTERNS.RULE_DEFINITION) || [];
-            let body = match.at(-1)?.trim() || '';
+            const match = textLine.match(LarkDocumentAnalyzer.PATTERNS.RULE_DEFINITION) || [];
+            const body = match.at(-1)?.trim() || '';
 
             const [aliasStatement,] = body.match(LarkDocumentAnalyzer.PATTERNS.ALIAS_DEFINITION) || [];
             if (aliasStatement) {
@@ -1179,8 +1185,8 @@ export class LarkDocumentAnalyzer {
         }
 
         if (this.isTemplateRuleDefinitionLine(textLine)) {
-            let match = textLine.match(LarkDocumentAnalyzer.PATTERNS.TEMPLATE_RULE_DEFINITION) || [];
-            let body = match.at(-1)?.trim() || '';
+            const match = textLine.match(LarkDocumentAnalyzer.PATTERNS.TEMPLATE_RULE_DEFINITION) || [];
+            const body = match.at(-1)?.trim() || '';
 
             const [aliasStatement,] = body.match(LarkDocumentAnalyzer.PATTERNS.ALIAS_DEFINITION) || [];
             if (aliasStatement) {
@@ -1189,8 +1195,8 @@ export class LarkDocumentAnalyzer {
         }
 
         if (this.isContinuationLine(textLine)) {
-            let match = textLine.match(LarkDocumentAnalyzer.PATTERNS.CONTINUATION_LINE_REFERENCE) || [];
-            let body = (match.at(-1)?.trim() || '').replace(/^\|\s*/, '').trim();
+            const match = textLine.match(LarkDocumentAnalyzer.PATTERNS.CONTINUATION_LINE_REFERENCE) || [];
+            const body = (match.at(-1)?.trim() || '').replace(/^\|\s*/, '').trim();
 
             const [aliasStatement,] = body.match(LarkDocumentAnalyzer.PATTERNS.ALIAS_DEFINITION) || [];
             if (aliasStatement) {

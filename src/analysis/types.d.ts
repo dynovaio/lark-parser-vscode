@@ -141,7 +141,7 @@ export interface SymbolTable {
     getRuleScope(ruleName: string): Scope | null;
     getDocumentSymbols(): vscode.DocumentSymbol[];
     getUnusedSymbols(): string[];
-    validateParameterArguments(ruleName: string, arguments: string[], scope?: Scope): ValidationResult[];
+    // validateParameterArguments(ruleName: string, arguments: string[], scope?: Scope): ValidationResult[];
     markSymbolAsUsed(symbolName: string, location: SymbolLocation, scope?: Scope): void;
     markSymbolAsIgnored(symbolName: string, location: SymbolLocation, scope?: Scope): void;
     addSymbol(entry: SymbolTableEntry, scope?: Scope): void;

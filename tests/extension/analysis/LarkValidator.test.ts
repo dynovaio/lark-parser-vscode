@@ -16,7 +16,7 @@ suite('LarkValidator', () => {
     /**
      * Helper function to create a mock TextDocument
      */
-    function createMockDocument(content: string, uri: string = 'test://test.lark'): vscode.TextDocument {
+    function createMockDocument(content: string, uri: string = 'test://test.lark', languageId: string = 'lark'): vscode.TextDocument {
         const mockUri = vscode.Uri.parse(uri);
         const lines = content.split('\n');
 
@@ -24,7 +24,7 @@ suite('LarkValidator', () => {
             uri: mockUri,
             fileName: mockUri.fsPath,
             isUntitled: false,
-            languageId: 'lark',
+            languageId: languageId,
             version: 1,
             isDirty: false,
             isClosed: false,
@@ -183,10 +183,7 @@ start: undefined_rule
     suite('Non-Lark Documents', () => {
         test('should return empty diagnostics for non-lark documents', () => {
             const content = `console.log("not lark");`;
-            const jsDocument = createMockDocument(content, 'test://test.js');
-
-            // Override languageId to simulate non-lark document
-            (jsDocument as any).languageId = 'javascript';
+            const jsDocument = createMockDocument(content, 'test://test.js', 'javascript');
 
             const analysisResult = {
                 symbolTable: new LarkSymbolTable(),

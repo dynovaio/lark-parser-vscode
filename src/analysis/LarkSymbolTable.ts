@@ -5,7 +5,6 @@ import type {
     SymbolTable,
     SymbolTableEntry,
     SymbolLocation,
-    ValidationResult,
     ParameterInfo
 } from './types.d';
 
@@ -137,11 +136,11 @@ export class LarkSymbolTable implements SymbolTable {
      * @param scope Scope for argument validation
      * @returns Array of validation results
      */
-    validateParameterArguments(ruleName: string, args: string[], scope: Scope): ValidationResult[] {
-        // TODO: Implement parameter argument validation
-        // For now, return empty array (no errors)
-        return [];
-    }
+    // validateParameterArguments(ruleName: string, args: string[], scope: Scope): ValidationResult[] {
+    //     // TODO: Implement parameter argument validation
+    //     // For now, return empty array (no errors)
+    //     return [];
+    // }
 
     /**
      * Marks a symbol as used and tracks the usage location
