@@ -1,5 +1,6 @@
-const esbuild = require("esbuild");
-const path = require("path");
+import { context } from "esbuild";
+import { resolve } from "path";
+import * as fs from "fs";
 
 const production = process.argv.includes('--production');
 const watch = process.argv.includes('--watch');
@@ -32,9 +33,8 @@ const aliasPlugin = {
 	setup (build) {
 		// Resolve @ to src directory
 		build.onResolve({ filter: /^@\// }, args => {
-			const resolvedPath = path.resolve(__dirname, 'src', args.path.slice(2));
+			const resolvedPath = resolve(__dirname, 'src', args.path.slice(2));
 			// Try different extensions if the file doesn't exist
-			const fs = require('fs');
 			const extensions = ['.ts', '.js', '.tsx', '.jsx'];
 
 			// First try the exact path
@@ -57,7 +57,7 @@ const aliasPlugin = {
 };
 
 async function main () {
-	const ctx = await esbuild.context({
+	const ctx = await context({
 		entryPoints: [
 			'src/extension.ts'
 		],

@@ -6,7 +6,7 @@
 **/eslint.config.mjs
 **/tsconfig.json
 
-esbuild.js
+esbuild.mjs
 node_modules/**
 out/**
 src/**

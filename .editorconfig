@@ -13,21 +13,15 @@ max_line_length = 100
 quote_type = single
 
 [*.ts]
-indent_size = 2
+indent_size = 4
 
-[*.css]
-indent_size = 2
+[*.mjs]
+indent_size = 4
 
-[*.html]
-indent_size = 2
+[*.js]
+indent_size = 4
 
 [*.json]
-indent_size = 2
-
-[*.yml]
-indent_size = 2
-
-[*.html]
 indent_size = 2
 
 [*.md]
