@@ -40,6 +40,10 @@
                 {
                     "name": "comment.line.double-slash.lark",
                     "match": "//.*$"
+                },
+                {
+                    "name": "comment.line.hash.lark",
+                    "match": "#.*$"
                 }
             ]
         },

@@ -16,7 +16,7 @@ import { LarkScope, ScopeTypes } from './LarkScope';
 export class LarkDocumentAnalyzer {
     private static readonly PATTERNS = {
         // Comments
-        COMMENT: /\/\/.*$/,
+        COMMENT: /(\/\/|\#).*$/,
 
         // Directives
         // Only allowed:
@@ -1320,8 +1320,8 @@ export class LarkDocumentAnalyzer {
      * @returns The line with literals masked as asterisks
      */
     private maskLiterals(line: string): string {
-        const STRING_LITERAL = /(?:"([^"]*)"([imslux]*))/g;
-        const REGEX_LITERAL = /(?:(\/[^\/]+\/)([imslux]*))/g;
+        const STRING_LITERAL = /(?:"([^"]*)"(i)?)/g;
+        const REGEX_LITERAL = /\/(?!\/)(\\\/|\\\\|[^\/])*?\/[imslux]*/g;
         const mask = (match: string): string => {
             return match.replace(/./g, '*');
         };
