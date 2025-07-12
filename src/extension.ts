@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { LarkSymbolProvider } from './providers/DocumentSymbolProvider';
+import { LarkSymbolProvider } from './providers/LarkSymbolProvider';
 import { LarkDocumentManager } from './orchestration/LarkDocumentManager';
 
 const activate = (context: vscode.ExtensionContext) => {

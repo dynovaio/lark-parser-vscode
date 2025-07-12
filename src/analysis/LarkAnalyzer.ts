@@ -7,7 +7,7 @@ import type {
     SymbolType,
     ParameterInfo,
     SymbolLocation
-} from './types.d';
+} from './types';
 import { LarkScope, ScopeTypes } from './LarkScope';
 
 /**

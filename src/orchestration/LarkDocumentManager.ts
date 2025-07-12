@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { LarkDocumentAnalyzer } from '../analysis/LarkDocumentAnalyzer';
+import { LarkDocumentAnalyzer } from '../analysis/LarkAnalyzer';
 import { LarkSymbolTable } from '../analysis/LarkSymbolTable';
 import { LarkValidator } from '../analysis/LarkValidator';
 import { AnalysisResult } from '../analysis/types.d';

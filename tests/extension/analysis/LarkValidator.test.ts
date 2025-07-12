@@ -2,7 +2,7 @@ import * as assert from 'assert';
 import * as vscode from 'vscode';
 import { LarkValidator } from '../../../src/analysis/LarkValidator';
 import { LarkSymbolTable } from '../../../src/analysis/LarkSymbolTable';
-import { LarkDocumentAnalyzer } from '../../../src/analysis/LarkDocumentAnalyzer';
+import { LarkDocumentAnalyzer } from '../../analysis/LarkAnalyzer';
 
 suite('LarkValidator', () => {
     let validator: LarkValidator;
