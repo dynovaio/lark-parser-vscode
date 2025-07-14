@@ -62,7 +62,7 @@
                 {
                     "name": "string.quoted.double.lark",
                     "begin": "\"",
-                    "end": "\"",
+                    "end": "\"(i)?",
                     "beginCaptures": {
                         "0": {
                             "name": "punctuation.definition.string.begin.lark"
@@ -71,6 +71,9 @@
                     "endCaptures": {
                         "0": {
                             "name": "punctuation.definition.string.end.lark"
+                        },
+                        "1": {
+                            "name": "keyword.operator.ignore.case.lark"
                         }
                     },
                     "patterns": [
@@ -84,16 +87,19 @@
         },
         "regexes": {
             "name": "string.regexp.lark",
-            "begin": "(/)",
+            "begin": "/",
             "beginCaptures": {
-                "1": {
+                "0": {
                     "name": "punctuation.definition.string.begin.lark"
                 }
             },
-            "end": "(/[imulx]*)",
+            "end": "/([imsulx]*)?",
             "endCaptures": {
-                "1": {
+                "0": {
                     "name": "punctuation.definition.string.end.lark"
+                },
+                "1": {
+                    "name": "keyword.operator.regex.flags.lark"
                 }
             },
             "patterns": [

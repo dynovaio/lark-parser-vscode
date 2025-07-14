@@ -1,0 +1,4 @@
+STRING_TERMINAL: "sample"i
+
+
+REGEX_TERMINAL: /(?P<sample>\w+)/imulxs
