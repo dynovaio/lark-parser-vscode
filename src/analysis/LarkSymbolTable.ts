@@ -261,9 +261,33 @@ export class LarkSymbolTable implements SymbolTable {
      * @returns DocumentSymbol object
      */
     private convertToDocumentSymbol(entry: SymbolTableEntry): vscode.DocumentSymbol {
-        const symbolKind =
-            entry.type === 'terminal' ? vscode.SymbolKind.Constant : vscode.SymbolKind.Function;
-        const detail = entry.type === 'rule' ? 'rule' : 'terminal';
+        let symbolKind = vscode.SymbolKind.Constant;
+
+        if (entry.type === SymbolTypes.RULE) {
+            symbolKind = vscode.SymbolKind.Method;
+
+            if (entry.isTemplate) {
+                symbolKind = vscode.SymbolKind.Class;
+            }
+        }
+
+        let detail = 'Terminal';
+
+        if (entry.type === SymbolTypes.RULE) {
+            detail = 'Rule';
+
+            if (entry.isTemplate) {
+                detail = 'Template Rule';
+            }
+        }
+
+        if (entry.isImported) {
+            detail = `Imported ${detail}`;
+        }
+
+        if (entry.isAlias) {
+            detail = `${detail} (alias)`;
+        }
 
         return new vscode.DocumentSymbol(
             entry.name,

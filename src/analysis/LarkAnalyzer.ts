@@ -272,6 +272,7 @@ export class LarkDocumentAnalyzer {
                         range: symbol.location.range
                     });
                 }
+
                 analysisResult.symbolTable.addSymbol(symbol, scope);
             } else {
                 analysisResult.syntaxErrors.push({
@@ -294,6 +295,7 @@ export class LarkDocumentAnalyzer {
     private processTerminalDefinition(
         definition: SymbolDefinition,
         document: vscode.TextDocument,
+        // analysisResult: AnalysisResult,
         scope: LarkScope
     ): SymbolTableEntry[] {
         const { lines: definitionLines, body: definitionBody, startIndex, endIndex } = definition;
@@ -395,6 +397,7 @@ export class LarkDocumentAnalyzer {
         const location = this.computeLocation(document, definitionLines, startIndex, endIndex);
         const parameters = this.processTemplateRuleParameters(definition);
         const ruleScope = new LarkScope(ScopeTypes.RULE, location.range, name, scope);
+
         if (parameters.length > 0) {
             for (const param of parameters) {
                 ruleScope.addParameter(param);
