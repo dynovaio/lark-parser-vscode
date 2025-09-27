@@ -1,7 +1,7 @@
 {
     "name": "vscode-lark",
     "version": "0.0.0",
-    "publisher": "dirk-thomas",
+    "publisher": "dynova",
     "engines": {
         "vscode": "^1.2.0"
     },
