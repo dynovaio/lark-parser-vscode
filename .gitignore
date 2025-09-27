@@ -4,6 +4,9 @@
 !.gitattributes
 !.gitignore
 !.nvmrc
+!.prettierignore
+!.prettierrc
+!.wakatime-project
 !.vscode/extensions.json
 !.vscode/launch.json
 !.vscode/settings.json
