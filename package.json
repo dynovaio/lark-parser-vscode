@@ -1,6 +1,6 @@
 {
   "name": "vscode-lark",
-  "displayName": "Lark Parser",
+  "displayName": "Lark",
   "description": "Language support for Lark grammar files",
   "version": "0.0.0",
   "publisher": "dynova",
