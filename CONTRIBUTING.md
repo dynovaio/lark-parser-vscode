@@ -8,8 +8,8 @@
 Clone the project
 
 ```bash
-git clone https://github.com/dynovaio/newrelic-sb-nrql-vscode.git
-cd newrelic-sb-nrql-vscode
+git clone https://github.com/dynovaio/lark-parser-vscode.git
+cd lark-parser-vscode
 ```
 
 ## Code of Conduct
@@ -17,6 +17,5 @@ cd newrelic-sb-nrql-vscode
 > Please note that this project is published with a Code of Conduct for
 > collaborators. By participating in this project, you agree to abide by its
 > terms.
-
 
 [nvm]: https://github.com/nvm-sh/nvm
