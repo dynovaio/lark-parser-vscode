@@ -1,43 +1,68 @@
 {
-    "name": "vscode-lark",
-    "version": "0.0.0",
-    "publisher": "dirk-thomas",
-    "engines": {
-        "vscode": "^1.2.0"
-    },
-    "license": "Apache-2.0",
-    "displayName": "Lark grammar syntax support",
-    "description": "Language support for Lark grammar files",
-    "categories": [
-        "Languages"
-    ],
-    "homepage": "https://marketplace.visualstudio.com/items?itemName=dirk-thomas.vscode-lark",
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/dirk-thomas/vscode-lark"
-    },
-    "bugs": {
-        "url": "https://github.com/dirk-thomas/vscode-lark/issues"
-    },
-    "contributes": {
-        "languages": [
-            {
-                "id": "lark",
-                "aliases": [
-                    "Lark"
-                ],
-                "extensions": [
-                    ".lark"
-                ],
-                "configuration": "./language-configuration.json"
-            }
+  "name": "vscode-lark-parser",
+  "displayName": "Lark",
+  "description": "Language support for Lark grammar files",
+  "version": "0.1.0",
+  "publisher": "dynova",
+  "keywords": [
+    "Lark Parser",
+    "Lark",
+    "Syntax"
+  ],
+  "license": "Apache-2.0",
+  "icon": "images/_extension_icon.png",
+  "galleryBanner": {
+    "color": "#f3f4f6",
+    "theme": "light"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/lark-parser/vscode-lark"
+  },
+  "bugs": {
+    "url": "https://github.com/lark-parser/vscode-lark/issues"
+  },
+  "homepage": "https://github.com/lark-parser/vscode-lark",
+  "engines": {
+    "vscode": "^1.2.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "contributes": {
+    "languages": [
+      {
+        "id": "lark",
+        "aliases": [
+          "Lark",
+          "lark"
         ],
-        "grammars": [
-            {
-                "language": "lark",
-                "scopeName": "source.lark",
-                "path": "./syntaxes/lark.json"
-            }
-        ]
-    }
+        "extensions": [
+          ".lark"
+        ],
+        "icon": {
+          "light": "images/_lark_icon_dark.svg",
+          "dark": "images/_lark_icon_light.svg"
+        },
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "lark",
+        "scopeName": "source.lark",
+        "path": "./syntaxes/lark.json"
+      },
+      {
+        "scopeName": "markdown.lark.codeblock",
+        "path": "./syntaxes/markdown-lark-codeblock.json",
+        "injectTo": [
+          "text.html.markdown"
+        ],
+        "embeddedLanguages": {
+          "meta.embedded.block.lark": "lark"
+        }
+      }
+    ]
+  }
 }
