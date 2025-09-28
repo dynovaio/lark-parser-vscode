@@ -1,0 +1,61 @@
+{
+	"compilerOptions": {
+		// Type Checking
+		"strict": true,
+		"allowUnreachableCode": false,
+		"allowUnusedLabels": false,
+		// "exactOptionalPropertyTypes": true,
+		"noFallthroughCasesInSwitch": true,
+		"noImplicitOverride": true,
+		"noImplicitReturns": true,
+		"noPropertyAccessFromIndexSignature": false,
+		// "noUncheckedIndexedAccess": true,
+		"noUnusedLocals": true,
+		// "noUnusedParameters": true,
+		// Modules
+		"allowArbitraryExtensions": false,
+		"allowImportingTsExtensions": false,
+		"moduleResolution": "Node16",
+		"resolveJsonModule": true,
+		"resolvePackageJsonExports": true,
+		"resolvePackageJsonImports": true,
+		"rootDirs": [
+			"src",
+			"tests"
+		],
+		// Emit
+		"declaration": true,
+		"declarationMap": true,
+		"importHelpers": false,
+		"newLine": "lf",
+		"noEmitHelpers": true,
+		"outDir": "out",
+		"removeComments": false,
+		"sourceMap": true,
+		// Interop Constraints
+		"allowJs": false,
+		"checkJs": false,
+		"allowSyntheticDefaultImports": true,
+		"esModuleInterop": true,
+		"forceConsistentCasingInFileNames": true,
+		"isolatedModules": true,
+		// Language and Environment
+		"module": "Node16",
+		"target": "ES2022",
+		"lib": [
+			"ES2022"
+		],
+		"moduleDetection": "force"
+	},
+	"include": [
+		"src/**/*",
+		"tests/**/*"
+	],
+	"exclude": [
+		"node_modules/**/*",
+		"out/**/*",
+		"dist/**/*",
+		".temporary-tests/**/*",
+		"src/worker.ts"
+	]
+}
