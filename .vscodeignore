@@ -1,4 +1,39 @@
-.*
-.vscode
-node_modules
-tests
+# Development files
+.vscode/**
+.vscode-test/**
+src/**
+.gitignore
+.yarnrc
+vsc-extension-quickstart.md
+**/tsconfig.json
+**/.eslintrc.json
+**/*.map
+**/*.ts
+.nyc_output/**
+out/**
+
+# Node.js
+node_modules/**
+
+# Python development
+.venv/**
+poetry.lock
+pyproject.toml
+scripts/**
+.pytest_cache/**
+**/__pycache__/**
+**/*.pyc
+**/*.pyo
+**/*.pyd
+.coverage
+.coverage.*
+htmlcov/**
+.tox/**
+.cache/**
+.mypy_cache/**
+
+# System files
+.git/**
+*.vsix
+.DS_Store
+Thumbs.db
