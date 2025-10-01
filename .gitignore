@@ -3,6 +3,7 @@
 !.editorconfig
 !.gitattributes
 !.gitignore
+!.gitkeep
 !.nvmrc
 !.prettierignore
 !.prettierrc
