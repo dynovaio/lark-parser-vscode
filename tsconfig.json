@@ -1,7 +1,7 @@
 {
 	"compilerOptions": {
 		// Type Checking
-		"strict": true,
+		"strict": false,
 		"allowUnreachableCode": false,
 		"allowUnusedLabels": false,
 		// "exactOptionalPropertyTypes": true,
@@ -41,9 +41,9 @@
 		"isolatedModules": true,
 		// Language and Environment
 		"module": "Node16",
-		"target": "ES2022",
+		"target": "ES2020",
 		"lib": [
-			"ES2022"
+			"ES2020"
 		],
 		"moduleDetection": "force"
 	},
