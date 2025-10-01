@@ -17,12 +17,12 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/lark-parser/vscode-lark"
+    "url": "https://github.com/dynovaio/lark-parser-vscode"
   },
   "bugs": {
-    "url": "https://github.com/lark-parser/vscode-lark/issues"
+    "url": "https://github.com/dynovaio/lark-parser-vscode/issues"
   },
-  "homepage": "https://github.com/lark-parser/vscode-lark",
+  "homepage": "https://github.com/dynovaio/lark-parser-vscode",
   "engines": {
     "vscode": "^1.2.0"
   },
@@ -33,6 +33,16 @@
     "onLanguage:markdown.lark.codeblock"
   ],
   "main": "./dist/extension.js",
+  "files": [
+    "dist/",
+    "bundled/",
+    "syntaxes/",
+    "language-configuration.json",
+    "images/",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ],
   "contributes": {
     "languages": [
       {
@@ -70,24 +80,63 @@
     ],
     "commands": [
       {
-        "command": "vscode-lark-parser.helloWorld",
-        "title": "Lark: Hello World"
+        "command": "lark.restartServer",
+        "title": "Restart Language Server",
+        "category": "Lark"
       }
-    ]
+    ],
+    "configuration": {
+      "type": "object",
+      "title": "Lark",
+      "properties": {
+        "lark.server.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable the Lark Language Server"
+        },
+        "lark.server.pythonPath": {
+          "type": "string",
+          "default": "",
+          "description": "Custom path to the Lark Language Server executable. Leave empty to use the bundled server."
+        },
+        "lark.server.arguments": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [],
+          "description": "Additional arguments for the language server"
+        },
+        "lark.trace.server": {
+          "type": "string",
+          "enum": [
+            "off",
+            "messages",
+            "verbose"
+          ],
+          "default": "off",
+          "description": "Trace communication between VS Code and the language server"
+        }
+      }
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run package",
-    "compile": "npm run check-types && npm run lint && node esbuild.mjs",
+    "compile": "npm run lint && node esbuild.mjs",
     "watch": "npm-run-all -p watch:*",
     "watch:esbuild": "node esbuild.mjs --watch",
     "watch:tsc": "tsc --noEmit --watch --project tsconfig.json",
-    "package": "npm run check-types && npm run lint && node esbuild.mjs --production",
+    "package": "npm run lint && node esbuild.mjs --production && npm run bundle-server",
     "compile-tests": "tsc -p . --outDir out",
     "watch-tests": "tsc -p . -w --outDir out",
     "pretest": "npm run compile-tests && npm run compile && npm run lint",
     "check-types": "tsc --noEmit",
     "lint": "eslint src",
-    "test": "vscode-test"
+    "test": "vscode-test",
+    "setup-python": "cd . && python -m poetry install",
+    "build-python": "python -m poetry build",
+    "bundle-server": "python3 scripts/install_bundled.py",
+    "clean-bundle": "rm -rf bundled"
   },
   "devDependencies": {
     "@types/mocha": "^10.0.10",
@@ -103,6 +152,6 @@
     "typescript": "^5.9.2"
   },
   "dependencies": {
-    "pyodide": "^0.28.3"
+    "vscode-languageclient": "^9.0.1"
   }
 }
