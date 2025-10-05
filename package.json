@@ -42,16 +42,6 @@
         "onLanguage:markdown.lark.codeblock"
     ],
     "main": "./dist/extension.js",
-    "files": [
-        "dist/",
-        "bundled/",
-        "syntaxes/",
-        "language-configuration.json",
-        "images/",
-        "README.md",
-        "LICENSE",
-        "CHANGELOG.md"
-    ],
     "contributes": {
         "languages": [
             {
@@ -140,22 +130,18 @@
         "watch": "npm-run-all -p watch:*",
         "watch:esbuild": "node esbuild.mjs --watch",
         "watch:tsc": "tsc --noEmit --watch --project tsconfig.json",
-        "package": "npm run lint && node esbuild.mjs --production && npm run bundle-server",
+        "package": "npm run lint && node esbuild.mjs --production",
         "compile-tests": "tsc -p . --outDir out",
         "watch-tests": "tsc -p . -w --outDir out",
         "pretest": "npm run compile-tests && npm run compile && npm run lint",
         "check-types": "tsc --noEmit",
         "lint": "eslint src",
-        "test": "vscode-test",
-        "setup-python": "cd . && python -m poetry install",
-        "build-python": "python -m poetry build",
-        "bundle-server": "python3 scripts/install_bundled.py",
-        "clean-bundle": "rm -rf bundled"
+        "test": "vscode-test"
     },
     "devDependencies": {
         "@types/mocha": "^10.0.10",
         "@types/node": "^24.5.2",
-        "@types/vscode": "^1.104.0",
+        "@types/vscode": "^1.93.0",
         "@typescript-eslint/eslint-plugin": "^8.44.1",
         "@typescript-eslint/parser": "^8.44.1",
         "@vscode/test-cli": "^0.0.11",
