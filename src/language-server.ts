@@ -1,106 +1,56 @@
-import * as fs from 'fs';
 import * as path from 'path';
-import * as vscode from 'vscode';
-import { execSync } from 'child_process';
+import { workspace, ExtensionContext } from 'vscode';
 import {
     LanguageClient,
     LanguageClientOptions,
     ServerOptions,
     TransportKind
 } from 'vscode-languageclient/node';
+import {
+    getPythonInterpreter,
+    installLarkParserLanguageServer,
+    isLarkParserLanguageServerInstalled,
+    isSupportedLarkParserLanguageServerVersion
+} from './python';
+import { extensionLogger, extensionOutputChannel, extensionTraceOutputChannel } from './logger';
 
 let client: LanguageClient | undefined;
 
-export function getPythonExecutable(): string {
-    const candidates = ['python3', 'python'];
+export async function getServerOptions(
+    context: ExtensionContext,
+    useExtensionBundle: boolean
+): Promise<ServerOptions> {
+    const pythonInterpreter = await getPythonInterpreter();
+    const pythonInterpreterPath = pythonInterpreter?.path;
 
-    for (const candidate of candidates) {
-        try {
-            const result = execSync(`${candidate} --version`, { encoding: 'utf8' });
-            if (result.startsWith('Python')) {
-                return candidate;
-            }
-        } catch {
-            // Ignore errors and try next candidate
-        }
-    }
-
-    throw new Error('No suitable Python interpreter found. Please install Python 3.');
-}
-
-export function getServerOptions(context: vscode.ExtensionContext): ServerOptions {
-    const config = vscode.workspace.getConfiguration('lark');
-    const customPythonPath = config.get<string>('server.pythonPath');
+    const config = workspace.getConfiguration('lark');
     const serverArguments = config.get<string[]>('server.arguments', []);
 
-    // If user specified a custom server path, use it
-    if (customPythonPath) {
-        console.log(`Using custom server path: ${customPythonPath}`);
-        return {
-            command: customPythonPath,
-            args: ['-m', 'lark_parser_language_server', ...serverArguments],
-            transport: TransportKind.stdio,
-            options: {
-                cwd: context.extensionPath,
-                env: { ...process.env }
-            }
-        };
+    extensionLogger.log('Determining server options for Lark Language Server...');
+
+    let languageServerCommandArgs: string[] = ['-m', 'lark_parser_language_server'];
+
+    if (useExtensionBundle) {
+        extensionLogger.log('Using bundled Lark Language Server from the extension.');
+        const extensionRoot = context.extensionPath;
+        const bundledEnvironmentPath = path.join(extensionRoot, 'bundled');
+        const entryPointPath = path.join(bundledEnvironmentPath, 'entrypoint.py');
+        languageServerCommandArgs = [entryPointPath];
     }
 
-    // Try bundled server first
-    const bundledServerPath = path.join(
-        context.extensionPath,
-        'bundled',
-        'lark_parser_language_server',
-        '__main__.py'
-    );
-    if (fs.existsSync(bundledServerPath)) {
-        console.log(`Using bundled server: ${bundledServerPath}`);
-        return {
-            command: getPythonExecutable(),
-            args: [bundledServerPath, ...serverArguments],
-            transport: TransportKind.stdio,
-            options: {
-                cwd: context.extensionPath,
-                env: { ...process.env }
-            }
-        };
-    }
-
-    // Fallback to Poetry if available
-    const poetryLockPath = path.join(context.extensionPath, 'poetry.lock');
-    if (fs.existsSync(poetryLockPath)) {
-        console.log('Using Poetry server (development mode)');
-        return {
-            command: 'poetry',
-            args: ['run', 'python', '-m', 'lark_parser_language_server', ...serverArguments],
-            transport: TransportKind.stdio,
-            options: {
-                cwd: context.extensionPath,
-                env: { ...process.env }
-            }
-        };
-    }
-
-    // Final fallback: try system Python with the source
-    const srcServerPath = path.join(context.extensionPath, 'src');
-    console.log('Using system Python with source path (fallback)');
     return {
-        command: getPythonExecutable(),
-        args: ['-m', 'lark_parser_language_server', ...serverArguments],
+        command: pythonInterpreterPath,
+        args: [...languageServerCommandArgs, ...serverArguments],
         transport: TransportKind.stdio,
         options: {
             cwd: context.extensionPath,
-            env: {
-                ...process.env,
-                PYTHONPATH: srcServerPath
-            }
+            env: { ...process.env }
         }
     };
 }
 
-export function startLanguageServer(context: vscode.ExtensionContext): void {
-    const config = vscode.workspace.getConfiguration('lark');
+export async function startLanguageServer(context: ExtensionContext): Promise<void> {
+    const config = workspace.getConfiguration('lark');
 
     // Check if language server is enabled
     if (!config.get<boolean>('server.enabled', true)) {
@@ -108,17 +58,35 @@ export function startLanguageServer(context: vscode.ExtensionContext): void {
         return;
     }
 
+    const pythonInterpreter = await getPythonInterpreter();
+    const pythonInterpreterPath = pythonInterpreter?.path;
+
+    let useExtensionBundle = true;
+
+    if (
+        isLarkParserLanguageServerInstalled(pythonInterpreterPath) &&
+        isSupportedLarkParserLanguageServerVersion(pythonInterpreterPath)
+    ) {
+        extensionLogger.log('Lark Language Server is already installed and up to date.');
+        useExtensionBundle = false;
+    } else {
+        extensionLogger.log('Lark Language Server is not installed or outdated. Installing...');
+        await installLarkParserLanguageServer(pythonInterpreterPath, context);
+    }
+
     // Try to determine the best server options
-    const serverOptions = getServerOptions(context);
+    const serverOptions = await getServerOptions(context, useExtensionBundle);
+
+    extensionLogger.log(`Starting Lark Language Server using Python interpreter at: ${pythonInterpreterPath}`);
 
     // Client options
     const clientOptions: LanguageClientOptions = {
         documentSelector: [{ scheme: 'file', language: 'lark' }],
         synchronize: {
-            fileEvents: vscode.workspace.createFileSystemWatcher('**/*.lark')
+            fileEvents: workspace.createFileSystemWatcher('**/*.lark')
         },
-        outputChannel: vscode.window.createOutputChannel('Lark Parser Language Server'),
-        traceOutputChannel: vscode.window.createOutputChannel('Lark Parser Language Server Trace')
+        outputChannel: extensionOutputChannel,
+        traceOutputChannel: extensionTraceOutputChannel
     };
 
     // Create the language client
@@ -135,14 +103,8 @@ export function startLanguageServer(context: vscode.ExtensionContext): void {
 
 export function stopLanguageServer(): Thenable<void> | undefined {
     if (client) {
-        client.clientOptions.outputChannel?.appendLine('Stopping Lark Language Server...');
-        client.clientOptions.traceOutputChannel?.appendLine('Stopping Lark Language Server...');
-
+        extensionLogger.log('Stopping Lark Language Server...');
         client.stop();
-
-        client.clientOptions.outputChannel?.dispose();
-        client.clientOptions.traceOutputChannel?.dispose();
-
         client = undefined;
     }
 
