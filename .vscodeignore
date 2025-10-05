@@ -1,3 +1,5 @@
+.*
+.*/
 # Development files
 .vscode/**
 .vscode-test/**
@@ -38,3 +40,6 @@ htmlcov/**
 .DS_Store
 Thumbs.db
 bundled/**
+eslint.config.mjs
+esbuild.mjs
+tests/**
