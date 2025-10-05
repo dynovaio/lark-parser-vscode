@@ -8,7 +8,7 @@
 
 ### Prerequisites
 
--   Node.js 22+
+-   Node.js 22.17+
 
 ### Setup
 
