@@ -1,15 +1,15 @@
 [![Community-Project][dynova-banner-community]][dynova-homepage]
 
-[![Apache 2 License][badge-license]][repository] [![Lark][badge-language]][repository] [![Visual Studio Code][badge-tool]][repository]
+[![Apache 2 License][badge-license]][repository]
+[![Lark][badge-language]][repository]
+[![Visual Studio Code][badge-tool]][repository]
 
 # Lark for Visual Studio Code
 
-This extension provides language support for Lark grammar files in Visual Studio Code.
+The VS Code Lark Parser extension provides rich language support for Lark grammar files.
 
-![Lark Syntax Highlighting](https://github.com/dynovaio/lark-parser-vscode/raw/develop/images/_lark_sample.png)
-
-Contributions are greatly appreciated.
-Please fork this repository and open a pull request to make grammar tweaks, add support for other subgrammars etc.
+![Lark Syntax Highlighting][repository-example]
+![Lark Syntax Highlighting][repository-example-2]
 
 ## ✨ Features
 
@@ -18,15 +18,16 @@ Please fork this repository and open a pull request to make grammar tweaks, add 
     -   Rule definitions (lowercase identifiers)
     -   Terminal definitions (UPPERCASE identifiers)
     -   Directives (`%import`, `%ignore`, `%declare`, `%override`, `%extend`)
-    -   Operators (`?`, `*`, `+`, `|`, `->`, `!`)
-    -   Comments (`//`)
-    -   Strings and regex literals
-    -   Priority specifications (`.number`)
+    -   Operators (`?`, `*`, `+`, `|`, `->`, `!`, ...)
+    -   Comments (`//` and `#`)
+    -   Number, Strings and regex literals
+    -   Priority specifications
 
 -   ✅ **Language Server Protocol (LSP)**: Full intellisense support
 
     -   **Diagnostics**: Real-time syntax error detection and validation
-    -   **Code Completion**: Intelligent suggestions for rules, terminals, and keywords
+    -   **Code Completion**: Intelligent suggestions for rules, terminals, and
+        keywords
     -   **Hover Information**: Documentation and symbol information on hover
     -   **Go to Definition**: Navigate to rule and terminal definitions
     -   **Find References**: Locate all usages of symbols across your grammar
@@ -40,27 +41,20 @@ Please fork this repository and open a pull request to make grammar tweaks, add 
 ## 📦 Installation
 
 1. Open Visual Studio Code.
-2. Go to the Extensions view by clicking on the Extensions icon in the Activity Bar on the side of the window or by pressing `Ctrl+Shift+X`.
+2. Go to the Extensions view by clicking on the Extensions icon in the Activity
+   Bar on the side of the window or by pressing `Ctrl+Shift+X`.
 3. Search for "Lark".
 4. Click on the "Install" button for the extension named "Lark"
    [[↗][dynova.vscode-lark]] by Dynova [[↗][dynova-homepage]].
 5. Once installed, you can start using Lark syntax highlighting and intellisense in your `.lark` files.
 
-### Requirements
+## Requirements
 
--   **Python 3.8+**: Required for the language server
--   **Poetry** (recommended): For Python dependency management
-
-The extension will automatically try to find Python on your system. If you have a custom Python installation, you can configure the path in settings.
-
-### Requirements
-
--   **Python 3.8+**: Required for the language server
--   **No additional setup required**: The extension includes a bundled Python environment with all dependencies
+-   **Python 3.9+**: Required for the language server
 
 The extension automatically uses its bundled dependencies and doesn't require Poetry or a virtual environment setup. For development, Poetry is recommended but not required for end users.
 
-### Configuration
+## Configuration
 
 Optional settings you can add to your `settings.json`:
 
@@ -70,54 +64,22 @@ Optional settings you can add to your `settings.json`:
         "*.lark": "lark"
     },
     "lark.server.enabled": true,
-    "lark.server.path": "",
+    "lark.server.pythonPath": "pythonPath",
+    "lark.server.arguments": ["--log-level", "INFO"],
     "lark.trace.server": "off"
 }
 ```
 
 **Server Resolution Order:**
 
-1. **Custom path**: If `lark.server.path` is configured, uses that executable
-2. **Bundled server**: Uses the bundled Python environment (default and recommended)
-3. **Poetry environment**: Falls back to Poetry if available (development mode)
-4. **System Python**: Final fallback to system Python with source path## 🚀 Development
+1. **Custom path**: If `lark.server.pythonPath` is configured, uses that executable
+2. **Python extension environment**: If the official Python extension is installed, uses its selected interpreter
+3. **System Python**: Final fallback to system Python with source path
 
-### Prerequisites
+**Language server resolution order:**
 
--   Node.js 16+
--   Python 3.8+
--   Poetry
-
-### Setup
-
-```bash
-# Clone the repository
-git clone https://github.com/dynovaio/lark-parser-vscode.git
-cd lark-parser-vscode
-
-# Install Node.js dependencies
-npm install
-
-# Install Python dependencies
-poetry install
-
-# Build the extension
-npm run compile
-```
-
-### Running
-
-1. Open the project in VS Code
-2. Press `F5` to launch Extension Development Host
-3. Open a `.lark` file to test the extension
-
-### Architecture
-
-This extension follows the Language Server Protocol (LSP) architecture:
-
--   **TypeScript Client** (`src/extension.ts`): VS Code extension that manages the language server
--   **Python Server** (`src/lark_language_server/`): LSP server providing language features
--   **Communication**: JSON-RPC over stdio between client and server
+1. **Installed language server**: Checks if a language server is installed in the specified Python environment with a supported version.
+2. **Bundled server**: Uses the bundled Python environment.
 
 ## Release Notes
 
@@ -125,7 +87,7 @@ All changes are listed in our [change log ↗][changelog].
 
 ## Contributing
 
-Contributions are greatly appreciated.
+Contributions are greatly appreciated. Check the [contribution guidelines ↗][contributing] for more information.
 
 Please fork this repository and open a pull request to make grammar tweaks, add support for other subgrammars etc.
 
@@ -155,10 +117,14 @@ independently by [Dynova ↗][dynova-homepage] as an open source project.
 [badge-language]: https://img.shields.io/badge/Language-Lark-blue.svg?maxAge=2592000&style=flat-square
 [badge-tool]: https://img.shields.io/badge/Tool-Visual%20Studio%20Code-blue.svg?maxAge=2592000&style=flat-square
 [repository]: https://github.com/dynovaio/lark-parser-vscode
+[repository-example]: https://github.com/dynovaio/lark-parser-vscode/raw/develop/images/_lark_sample.png
+[repository-example-2]: https://github.com/dynovaio/lark-parser-vscode/raw/develop/images/_lark_sample_3.png
 [dynova.vscode-lark]: https://marketplace.visualstudio.com/items?itemName=dynova.vscode-lark
+[contributing]: https://github.com/dynovaio/lark-parser-vscode/blob/develop/CONTRIBUTING.md
 [changelog]: https://github.com/dynovaio/lark-parser-vscode/blob/develop/CHANGELOG.md
 [contributors]: https://github.com/dynovaio/lark-parser-vscode/graphs/contributors
 [license]: https://github.com/dynovaio/lark-parser-vscode/blob/develop/LICENSE
 [dirk-thomas.vscode-lark]: https://marketplace.visualstudio.com/items?itemName=dirk-thomas.vscode-lark
 [github-lark-parser]: https://github.com/lark-parser/vscode-lark
 [github-dirk-thomas]: https://github.com/dirk-thomas
+[github-lark-parser-language-server]: https://github.com/dynovaio/lark-parser-language-server
