@@ -1,68 +1,158 @@
 {
-  "name": "vscode-lark-parser",
-  "displayName": "Lark",
-  "description": "Language support for Lark grammar files",
-  "version": "0.1.0",
-  "publisher": "dynova",
-  "keywords": [
-    "Lark Parser",
-    "Lark",
-    "Syntax"
-  ],
-  "license": "Apache-2.0",
-  "icon": "images/_extension_icon.png",
-  "galleryBanner": {
-    "color": "#f3f4f6",
-    "theme": "light"
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/lark-parser/vscode-lark"
-  },
-  "bugs": {
-    "url": "https://github.com/lark-parser/vscode-lark/issues"
-  },
-  "homepage": "https://github.com/lark-parser/vscode-lark",
-  "engines": {
-    "vscode": "^1.2.0"
-  },
-  "categories": [
-    "Programming Languages"
-  ],
-  "contributes": {
-    "languages": [
-      {
-        "id": "lark",
-        "aliases": [
-          "Lark",
-          "lark"
-        ],
-        "extensions": [
-          ".lark"
-        ],
-        "icon": {
-          "light": "images/_lark_icon_dark.svg",
-          "dark": "images/_lark_icon_light.svg"
-        },
-        "configuration": "./language-configuration.json"
-      }
+    "name": "vscode-lark-parser",
+    "displayName": "Lark",
+    "description": "Language support for Lark grammar files",
+    "version": "0.2.0",
+    "publisher": "dynova",
+    "keywords": [
+        "Lark Parser",
+        "Lark",
+        "Syntax"
     ],
-    "grammars": [
-      {
-        "language": "lark",
-        "scopeName": "source.lark",
-        "path": "./syntaxes/lark.json"
-      },
-      {
-        "scopeName": "markdown.lark.codeblock",
-        "path": "./syntaxes/markdown-lark-codeblock.json",
-        "injectTo": [
-          "text.html.markdown"
-        ],
-        "embeddedLanguages": {
-          "meta.embedded.block.lark": "lark"
+    "languageServerInfo": {
+        "name": "Lark Parser",
+        "module": "lark-parser",
+        "package": {
+            "name": "lark-parser-language-server",
+            "version": "0.2.0"
         }
-      }
-    ]
-  }
+    },
+    "license": "Apache-2.0",
+    "icon": "images/_extension_icon.png",
+    "galleryBanner": {
+        "color": "#f3f4f6",
+        "theme": "light"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/dynovaio/lark-parser-vscode"
+    },
+    "bugs": {
+        "url": "https://github.com/dynovaio/lark-parser-vscode/issues"
+    },
+    "homepage": "https://github.com/dynovaio/lark-parser-vscode",
+    "engines": {
+        "node": ">=22.17.0",
+        "vscode": "^1.93.0"
+    },
+    "categories": [
+        "Programming Languages"
+    ],
+    "activationEvents": [
+        "onLanguage:markdown.lark.codeblock"
+    ],
+    "main": "./dist/extension.js",
+    "contributes": {
+        "languages": [
+            {
+                "id": "lark",
+                "aliases": [
+                    "Lark",
+                    "lark"
+                ],
+                "extensions": [
+                    ".lark"
+                ],
+                "icon": {
+                    "light": "images/_lark_icon_dark.svg",
+                    "dark": "images/_lark_icon_light.svg"
+                },
+                "configuration": "./language-configuration.json"
+            }
+        ],
+        "grammars": [
+            {
+                "language": "lark",
+                "scopeName": "source.lark",
+                "path": "./syntaxes/lark.json"
+            },
+            {
+                "scopeName": "markdown.lark.codeblock",
+                "path": "./syntaxes/markdown-lark-codeblock.json",
+                "injectTo": [
+                    "text.html.markdown"
+                ],
+                "embeddedLanguages": {
+                    "meta.embedded.block.lark": "lark"
+                }
+            }
+        ],
+        "commands": [
+            {
+                "command": "lark-parser.showLogs",
+                "title": "Show Logs",
+                "category": "Lark"
+            },
+            {
+                "command": "lark-parser.restartServer",
+                "title": "Restart Language Server",
+                "category": "Lark"
+            }
+        ],
+        "configuration": {
+            "type": "object",
+            "title": "Lark",
+            "properties": {
+                "lark.server.enabled": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Enable the Lark Language Server"
+                },
+                "lark.server.pythonPath": {
+                    "type": "string",
+                    "default": "",
+                    "description": "Custom path to the Lark Language Server executable. Leave empty to use the bundled server."
+                },
+                "lark.server.arguments": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "default": [],
+                    "description": "Additional arguments for the language server"
+                },
+                "lark.trace.server": {
+                    "type": "string",
+                    "enum": [
+                        "off",
+                        "messages",
+                        "verbose"
+                    ],
+                    "default": "off",
+                    "description": "Trace communication between VS Code and the language server"
+                }
+            }
+        }
+    },
+    "scripts": {
+        "vscode:prepublish": "npm run package",
+        "compile": "npm run lint && node esbuild.mjs",
+        "watch": "npm-run-all -p watch:*",
+        "watch:esbuild": "node esbuild.mjs --watch",
+        "watch:tsc": "tsc --noEmit --watch --project tsconfig.json",
+        "package": "npm run lint && node esbuild.mjs --production",
+        "compile-tests": "tsc -p . --outDir out",
+        "watch-tests": "tsc -p . -w --outDir out",
+        "pretest": "npm run compile-tests && npm run compile && npm run lint",
+        "check-types": "tsc --noEmit",
+        "lint": "eslint src",
+        "test": "vscode-test"
+    },
+    "devDependencies": {
+        "@types/mocha": "^10.0.10",
+        "@types/node": "^24.5.2",
+        "@types/vscode": "^1.93.0",
+        "@typescript-eslint/eslint-plugin": "^8.44.1",
+        "@typescript-eslint/parser": "^8.44.1",
+        "@vscode/test-cli": "^0.0.11",
+        "@vscode/test-electron": "^2.5.2",
+        "esbuild": "^0.25.10",
+        "eslint": "^9.36.0",
+        "npm-run-all": "^4.1.5",
+        "typescript": "^5.9.2"
+    },
+    "dependencies": {
+        "@vscode/python-extension": "^1.0.6",
+        "vscode-languageclient": "^9.0.1"
+    }
 }

@@ -12,7 +12,7 @@
 !.vscode/settings.json
 !.vscode/tasks.json
 !.vscodeignore
-
+bundled/
 node_modules/
 dist/
 coverage/

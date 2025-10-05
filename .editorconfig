@@ -6,22 +6,29 @@ end_of_line = lf
 indent_style = space
 insert_final_newline = true
 trim_trailing_whitespace = true
-indent_size = 2
-max_line_length = 100
 
-[*.svelte]
+[*.py]
+indent_size = 4
+continuation_indent_size = 8
+combine_as_imports = true
+max_line_length = 79
+multi_line_output = 4
 quote_type = single
+skip = build,.tox,venv
+
+[*.js]
+indent_size = 4
+
+[*.jsx]
+indent_size = 4
 
 [*.ts]
-indent_size = 2
+indent_size = 4
 
-[*.css]
-indent_size = 2
+[*.tsx]
+indent_size = 4
 
-[*.html]
-indent_size = 2
-
-[*.json]
+[*.md]
 indent_size = 2
 
 [*.yml]
@@ -30,8 +37,17 @@ indent_size = 2
 [*.html]
 indent_size = 2
 
-[*.md]
+[*.css]
 indent_size = 2
+
+[*.scss]
+indent_size = 2
+
+[*.json]
+indent_size = 4
 
 [*.lark]
 indent_size = 4
+
+[*.toml]
+indent_size = 2
