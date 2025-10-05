@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.2.0] - 2025-10-04
+
 ### Added
 
 -   **Language Server Protocol (LSP) support**: Full implementation of Lark Language Server for enhanced code intelligence
@@ -42,7 +44,7 @@
 -   **Code quality**: ESLint integration for consistent code style
 -   **Development experience**: Hot reload support and improved debugging capabilities
 
-## [0.1.0] - 2025-10-27
+## [0.1.0] - 2025-09-27
 
 -   Add icon for Lark language files (initially by @TheVroum).
 -   Add extension icon for the vscode marketplace.
