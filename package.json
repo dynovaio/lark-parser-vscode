@@ -36,7 +36,8 @@
         "vscode": "^1.93.0"
     },
     "categories": [
-        "Programming Languages"
+        "Programming Languages",
+        "Formatters"
     ],
     "activationEvents": [
         "onLanguage:markdown.lark.codeblock"
