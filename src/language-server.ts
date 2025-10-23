@@ -12,6 +12,7 @@ import {
     isLarkParserLanguageServerInstalled,
     isSupportedLarkParserLanguageServerVersion
 } from './python';
+import { getDocumentSelector } from './utils';
 import { extensionLogger, extensionOutputChannel, extensionTraceOutputChannel } from './logger';
 
 let client: LanguageClient | undefined;
@@ -77,13 +78,16 @@ export async function startLanguageServer(context: ExtensionContext): Promise<vo
     // Try to determine the best server options
     const serverOptions = await getServerOptions(context, useExtensionBundle);
 
-    extensionLogger.log(`Starting Lark Language Server using Python interpreter at: ${pythonInterpreterPath}`);
+    extensionLogger.log(
+        `Starting Lark Language Server using Python interpreter at: ${pythonInterpreterPath}`
+    );
 
     // Client options
     const clientOptions: LanguageClientOptions = {
-        documentSelector: [{ scheme: 'file', language: 'lark' }],
+        documentSelector: getDocumentSelector(),
         synchronize: {
-            fileEvents: workspace.createFileSystemWatcher('**/*.lark')
+            fileEvents: workspace.createFileSystemWatcher('**/*.lark'),
+            configurationSection: 'lark'
         },
         outputChannel: extensionOutputChannel,
         traceOutputChannel: extensionTraceOutputChannel
