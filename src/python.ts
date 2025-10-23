@@ -175,8 +175,12 @@ export function isSupportedPythonVersion(pythonPath: string | undefined): boolea
 
 export function isLarkParserLanguageServerInstalled(pythonPath: string): boolean {
     try {
-        const result = execSync(`${pythonPath} -c "import lark_parser_language_server"`, {encoding: 'utf8'});
-        extensionLogger.log('Lark Parser Language Server is installed in the selected Python environment.');
+        const result = execSync(`${pythonPath} -c "import lark_parser_language_server"`, {
+            encoding: 'utf8'
+        });
+        extensionLogger.log(
+            'Lark Parser Language Server is installed in the selected Python environment.'
+        );
         extensionLogger.log(`Import result: ${result}`);
 
         return true;
@@ -306,4 +310,14 @@ except ImportError:
 
     fs.writeFileSync(entryPointPath, entryPointContent);
     fs.chmodSync(entryPointPath, 0o755);
+}
+
+export function removeBundledEnvironment(context: ExtensionContext): void {
+    const extensionRoot = context.extensionPath;
+    const bundledEnvironmentPath = path.join(extensionRoot, 'bundled');
+
+    if (fs.existsSync(bundledEnvironmentPath)) {
+        extensionLogger.log('Removing bundled environment...');
+        fs.rmSync(bundledEnvironmentPath, { recursive: true, force: true });
+    }
 }
