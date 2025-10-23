@@ -17,6 +17,7 @@ class ExtensionLogger {
 
     static debugStyle = 'color: #13c2c2;';
     static infoStyle = 'color: #1677ff;';
+    static warnStyle = 'color: #faad14;';
     static errorStyle = 'color: #f5222d;';
 
     static log(message: string): void {
@@ -43,6 +44,22 @@ class ExtensionLogger {
             timestamp,
             this.prefix,
             'DEBUG',
+            message
+        );
+    }
+
+    static warn(message: string): void {
+        const timestamp = new Date().toISOString();
+        extensionOutputChannel.appendLine(`${timestamp} - ${this.prefix} - WARN :: ${message}`);
+        extensionTraceOutputChannel.appendLine(
+            `${timestamp} - ${this.prefix} - WARN :: ${message}`
+        );
+        console.warn(
+            '%c%s - %s - %s :: %s',
+            this.warnStyle,
+            timestamp,
+            this.prefix,
+            'WARN',
             message
         );
     }

@@ -2,6 +2,41 @@
 
 ## [Unreleased]
 
+### Added
+
+-   **New Extension Commands**: Enhanced user control and troubleshooting capabilities
+    -   `Lark: Remove Bundled Environment` - Command to clean up bundled Python dependencies for fresh installations
+-   **Virtual Workspace Support**: Improved compatibility with VS Code virtual workspaces
+    -   Dynamic document selector configuration based on workspace type
+    -   Support for virtual file schemes beyond local file system
+-   **Enhanced Logging System**: Improved debugging and troubleshooting capabilities
+    -   Enhanced logging for Python interpreter detection and validation
+    -   Better error reporting for executable Python detection processes
+
+### Changed
+
+-   **Language Server Dependency**: Updated to Lark Parser Language Server v0.3.0
+    -   Improved language server capabilities and performance
+    -   Enhanced formatting and code intelligence features
+-   **Extension Categories**: Added "Formatters" category to better reflect extension capabilities
+    -   Extension now properly categorized for document formatting features
+    -   Improved discoverability in VS Code marketplace
+-   **Document Selector Logic**: Intelligent workspace-aware document handling
+    -   Automatic detection of virtual vs file-based workspaces
+    -   Optimized file scheme support for different workspace types
+
+### Technical Improvements
+
+-   **Workspace Detection**: New utility functions for workspace type identification
+    -   `isVirtualWorkspace()` function for detecting virtual workspace environments
+    -   `getDocumentSelector()` utility for dynamic document selector configuration
+-   **Python Environment Management**: Enhanced bundled environment handling
+    -   Ability to remove and reinstall bundled Python dependencies
+    -   Improved error handling during Python interpreter detection
+-   **Code Organization**: New utility modules for better code maintainability
+    -   `src/utils.ts` - Common utility functions
+    -   Enhanced workspace management in `src/workspace.ts`
+
 ## [0.2.0] - 2025-10-04
 
 ### Added

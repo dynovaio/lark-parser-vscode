@@ -2,7 +2,7 @@
     "name": "vscode-lark-parser",
     "displayName": "Lark",
     "description": "Language support for Lark grammar files",
-    "version": "0.2.0",
+    "version": "0.3.0",
     "publisher": "dynova",
     "keywords": [
         "Lark Parser",
@@ -14,7 +14,7 @@
         "module": "lark-parser",
         "package": {
             "name": "lark-parser-language-server",
-            "version": "0.2.0"
+            "version": "0.3.0"
         }
     },
     "license": "Apache-2.0",
@@ -36,7 +36,8 @@
         "vscode": "^1.93.0"
     },
     "categories": [
-        "Programming Languages"
+        "Programming Languages",
+        "Formatters"
     ],
     "activationEvents": [
         "onLanguage:markdown.lark.codeblock"
@@ -86,6 +87,11 @@
             {
                 "command": "lark-parser.restartServer",
                 "title": "Restart Language Server",
+                "category": "Lark"
+            },
+            {
+                "command": "lark-parser.removeBundledEnvironment",
+                "title": "Remove Bundled Environment",
                 "category": "Lark"
             }
         ],

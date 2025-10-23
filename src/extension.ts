@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import { extensionLogger, extensionOutputChannel, extensionTraceOutputChannel } from './logger';
 import { startLanguageServer, stopLanguageServer } from './language-server';
 import { getLanguageServerInfo } from './settings';
+import { removeBundledEnvironment } from './python';
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
     context.subscriptions.push(extensionOutputChannel);
@@ -28,8 +29,18 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         }
     );
 
+    const removeCommand = vscode.commands.registerCommand(
+        `${languageServerModule}.removeBundledEnvironment`,
+        async () => {
+            extensionLogger.log('Removing bundled environment...');
+            await removeBundledEnvironment(context);
+            vscode.window.showInformationMessage(`Bundled environment removed`);
+        }
+    );
+
     context.subscriptions.push(showLogsCommand);
     context.subscriptions.push(restartCommand);
+    context.subscriptions.push(removeCommand);
 
     await startLanguageServer(context);
 }

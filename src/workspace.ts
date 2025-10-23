@@ -35,3 +35,10 @@ export async function getWorkspaceRoot(): Promise<WorkspaceFolder> {
     }
     return rootWorkspace;
 }
+
+export function isVirtualWorkspace(): boolean {
+    const isVirtual =
+        workspace.workspaceFolders &&
+        workspace.workspaceFolders.every((f) => f.uri.scheme !== 'file');
+    return !!isVirtual;
+}
