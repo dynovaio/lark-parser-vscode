@@ -56,7 +56,7 @@ export async function getPythonInterpreterFromLarkExtensionSettings(): Promise<s
         return customPythonPath;
     }
 
-    extensionLogger.error('No custom pythonPath set in Lark extension settings.');
+    extensionLogger.warn('No custom pythonPath set in Lark extension settings.');
     return undefined;
 }
 
@@ -70,7 +70,7 @@ export async function getPythonInterpreterFromPythonExtensionAPI(): Promise<stri
 
     const api = await getPythonExtensionAPI();
     if (!api) {
-        extensionLogger.error('Python extension API is not available.');
+        extensionLogger.warn('Python extension API is not available.');
         return undefined;
     }
 
@@ -80,7 +80,7 @@ export async function getPythonInterpreterFromPythonExtensionAPI(): Promise<stri
         );
 
         if (!environment) {
-            extensionLogger.error('No active Python environment found in Python extension.');
+            extensionLogger.warn('No active Python environment found in Python extension.');
             return undefined;
         }
 
@@ -104,7 +104,9 @@ export async function getPythonInterpreterFromSystemPath(): Promise<string | und
                 encoding: 'utf8'
             });
             if (result.startsWith('Python')) {
-                return candidate;
+                return execSync(`${candidate} -c "import sys; print(sys.executable)"`, {
+                    encoding: 'utf8'
+                }).trim();
             }
         } catch {
             extensionLogger.error(
@@ -113,7 +115,7 @@ export async function getPythonInterpreterFromSystemPath(): Promise<string | und
         }
     }
 
-    extensionLogger.error('No suitable Python interpreter found in system PATH.');
+    extensionLogger.warn('No suitable Python interpreter found in system PATH.');
     return undefined;
 }
 
@@ -123,21 +125,31 @@ export async function getPythonInterpreter(resource?: Uri): Promise<IInterpreter
     // Check custom path in Lark extension settings first
     let pythonInterpreterPath = await getPythonInterpreterFromLarkExtensionSettings();
     if (pythonInterpreterPath && isSupportedPythonVersion(pythonInterpreterPath)) {
+        extensionLogger.log(
+            `Using Python interpreter from Lark extension settings: ${pythonInterpreterPath}`
+        );
         return { path: pythonInterpreterPath, resource };
     }
 
     // Check Python extension API next
     pythonInterpreterPath = await getPythonInterpreterFromPythonExtensionAPI();
     if (pythonInterpreterPath && isSupportedPythonVersion(pythonInterpreterPath)) {
+        extensionLogger.log(
+            `Using Python interpreter from Python extension API: ${pythonInterpreterPath}`
+        );
         return { path: pythonInterpreterPath, resource };
     }
 
     // Finally, check system PATH
     pythonInterpreterPath = await getPythonInterpreterFromSystemPath();
     if (pythonInterpreterPath && isSupportedPythonVersion(pythonInterpreterPath)) {
+        extensionLogger.log(`Using Python interpreter from system PATH: ${pythonInterpreterPath}`);
         return { path: pythonInterpreterPath, resource };
     }
 
+    extensionLogger.error(
+        'No suitable Python interpreter found. Please install Python 3.9 or above.'
+    );
     throw new Error('No suitable Python interpreter found. Please install Python 3.9 or above.');
 }
 
@@ -175,14 +187,12 @@ export function isSupportedPythonVersion(pythonPath: string | undefined): boolea
 
 export function isLarkParserLanguageServerInstalled(pythonPath: string): boolean {
     try {
-        const result = execSync(`${pythonPath} -c "import lark_parser_language_server"`, {
+        execSync(`${pythonPath} -c "import lark_parser_language_server"`, {
             encoding: 'utf8'
         });
         extensionLogger.log(
             'Lark Parser Language Server is installed in the selected Python environment.'
         );
-        extensionLogger.log(`Import result: ${result}`);
-
         return true;
     } catch {
         extensionLogger.error(
