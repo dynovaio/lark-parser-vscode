@@ -1,287 +1,286 @@
 {
-  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
-  "name": "Lark",
-  "comment": "VSCode Syntax Parser for Lark grammar files",
-  "foldingStartMarker": "^[^:]+:.*$",
-  "foldingStopMarker": "^\\s+",
-  "scopeName": "source.lark",
-  "patterns": [
-    { "include": "#comments" },
-    { "include": "#ignore-directive" },
-    { "include": "#override-extend-directive" },
-    { "include": "#declare-directive" },
-    { "include": "#import-directive" },
-    { "include": "#terminal-definitions" },
-    { "include": "#rule-definitions-conditional-inline" },
-    { "include": "#rule-definitions-pinned" },
-    { "include": "#rule-definition" }
-  ],
-  "repository": {
-    "comments": {
-      "patterns": [
-        {
-          "name": "comment.line.double-slash.lark",
-          "match": "//.*$"
-        }
-      ]
-    },
-    "base-tokens": {
-      "patterns": [
-        { "include": "#strings" },
-        { "include": "#regexes" }
-      ]
-    },
-    "strings": {
-      "patterns": [
-        {
-          "name": "string.quoted.double.lark",
-          "begin": "\"",
-          "end": "\"",
-          "beginCaptures": { "0": { "name": "punctuation.definition.string.begin.lark" } },
-          "endCaptures": { "0": { "name": "punctuation.definition.string.end.lark" } },
-          "patterns": [
-            {
-              "name": "constant.character.escape.lark",
-              "match": "\\\\."
-            }
-          ]
-        }
-      ]
-    },
-    "regexes": {
-      "name": "string.regexp.lark",
-      "begin": "(/)",
-      "beginCaptures": { "1": { "name": "punctuation.definition.string.begin.lark" } },
-      "end": "(/[imulx]*)",
-      "endCaptures": { "1": { "name": "punctuation.definition.string.end.lark" } },
-      "patterns": [
-        {
-          "name": "constant.character.escape.lark",
-          "match": "\\\\."
-        }
-      ]
-    },
-    "ignore-directive": {
-      "name": "meta.directive.ignore.lark",
-      "begin": "^\\s*(%)(ignore)\\b",
-      "beginCaptures": {
-        "1": { "name": "storage.modifier.directive.lark" },
-        "2": { "name": "storage.type.directive.lark" }
-      },
-      "end": "(?=$|//)",
-      "patterns": [
-        { "include": "#base-tokens" },
-        {
-          "name": "support.class.terminal.lark",
-          "match": "\\b[A-Z_][A-Z0-9_]*\\b"
-        }
-      ]
-    },
-    "override-extend-directive": {
-      "name": "meta.directive.override-extend.lark",
-      "begin": "^\\s*(%)(override|extend)\\b",
-      "beginCaptures": {
-        "1": { "name": "storage.modifier.directive.lark" },
-        "2": { "name": "storage.type.directive.lark" }
-      },
-      "end": "(?=$|//)",
-      "patterns": [
-        {
-          "begin": "\\s*([A-Z_][A-Z0-9_]*)(\\s*\\.\\s*(-?\\d+))?\\s*(:)",
-          "beginCaptures": {
-            "1": { "name": "support.class.terminal.lark" },
-            "3": { "name": "constant.numeric.priority.lark" },
-            "4": { "name": "punctuation.separator.colon.lark" }
-          },
-          "end": "(?=$|//)",
-          "patterns": [ { "include": "#rule-body-tokens" } ]
-        },
-        {
-          "begin": "\\s*([a-z_][a-z0-9_]*|(?=\"))(\\s*\\.\\s*(-?\\d+))?\\s*(:)",
-          "beginCaptures": {
-            "1": { "name": "support.function.rule.lark" },
-            "3": { "name": "constant.numeric.priority.lark" },
-            "4": { "name": "punctuation.separator.colon.lark" }
-          },
-          "end": "(?=$|//)",
-          "patterns": [ { "include": "#rule-body-tokens" } ]
-        }
-      ]
-    },
-    "declare-directive": {
-      "name": "meta.directive.declare.lark",
-      "begin": "^\\s*(%)(declare)\\b",
-      "beginCaptures": {
-        "1": { "name": "storage.modifier.directive.lark" },
-        "2": { "name": "storage.type.directive.lark" }
-      },
-      "end": "(?=$|//)",
-      "patterns": [
-        {
-          "name": "support.class.terminal.lark",
-          "match": "\\b[A-Z_][A-Z0-9_]*\\b"
-        }
-      ]
-    },
-    "import-directive": {
-      "name": "meta.directive.import.lark",
-      "begin": "^\\s*(%)(import)\\b",
-      "beginCaptures": {
-        "1": { "name": "storage.modifier.directive.lark" },
-        "2": { "name": "storage.type.directive.lark" }
-      },
-      "end": "(?=$|//)",
-      "patterns": [
-        {
-          "name": "meta.import.list.lark",
-          "begin": "\\s*([a-zA-Z_][a-zA-Z0-9_]*)\\s*(\\()",
-          "beginCaptures": {
-            "1": { "name": "constant.language.module.lark" },
-            "2": { "name": "punctuation.parenthesis.begin.lark" }
-          },
-          "end": "(\\))",
-          "endCaptures": { "1": { "name": "punctuation.parenthesis.end.lark" } },
-          "patterns": [
-            {
-              "name": "punctuation.separator.lark",
-              "match": ","
-            },
-            { "include": "#rule-body-tokens" }
-          ]
-        },
-        {
-          "name": "meta.import.dotted-alias.rule.lark",
-          "match": "\\s*([a-zA-Z_][a-zA-Z0-9_]*)(\\.)([a-z_][a-z0-9_]*)\\s*(->)\\s*([a-z_][a-z0-9_]*)\\b",
-          "captures": {
-            "1": { "name": "constant.language.module.lark" },
-            "2": { "name": "punctuation.accessor.lark" },
-            "3": { "name": "support.function.rule.lark" },
-            "4": { "name": "keyword.operator.alias.lark" },
-            "5": { "name": "support.function.rule.lark" }
-          }
-        },
-        {
-          "name": "meta.import.dotted-alias.terminal.lark",
-          "match": "\\s*([a-zA-Z_][a-zA-Z0-9_]*)(\\.)([A-Z_][A-Z0-9_]*)\\s*(->)\\s*([A-Z_][A-Z0-9_]*)\\b",
-          "captures": {
-            "1": { "name": "constant.language.module.lark" },
-            "2": { "name": "punctuation.accessor.lark" },
-            "3": { "name": "support.class.terminal.lark" },
-            "4": { "name": "keyword.operator.alias.lark" },
-            "5": { "name": "support.class.terminal.lark" }
-          }
-        },
-        {
-          "name": "meta.import.dotted.rule.lark",
-          "match": "\\s*([a-zA-Z_][a-zA-Z0-9_]*)(\\.)([a-z_][a-z0-9_]*)\\b",
-          "captures": {
-            "1": { "name": "constant.language.module.lark" },
-            "2": { "name": "punctuation.accessor.lark" },
-            "3": { "name": "support.function.rule.lark" }
-          }
-        },
-        {
-          "name": "meta.import.dotted.terminal.lark",
-          "match": "\\s*([a-zA-Z_][a-zA-Z0-9_]*)(\\.)([A-Z_][A-Z0-9_]*)\\b",
-          "captures": {
-            "1": { "name": "constant.language.module.lark" },
-            "2": { "name": "punctuation.accessor.lark" },
-            "3": { "name": "support.class.terminal.lark" }
-          }
-        }
-      ]
-    },
-    "terminal-definitions": {
-      "name": "meta.definition.terminal.lark",
-      "begin": "^\\s*([A-Z_][A-Z0-9_]*)(\\s*\\.\\s*(-?\\d+))?\\s*(:)",
-      "beginCaptures": {
-        "1": { "name": "support.class.terminal.lark" },
-        "3": { "name": "constant.numeric.priority.lark" },
-        "4": { "name": "punctuation.separator.colon.lark" }
-      },
-      "end": "(?=(^\\s*([a-zA-Z_][a-zA-Z0-9_]*|%|//|/\\*)))",
-      "patterns": [ { "include": "#rule-body-tokens" } ]
-    },
-    "rule-definitions-conditional-inline": {
-      "name": "meta.definition.rule.conditional.inline.lark",
-      "begin": "^\\s*(\\?)([a-z][a-z0-9_]*|(?=\"))(\\s*\\.\\s*(-?\\d+))?\\s*(:)",
-      "beginCaptures": {
-        "1": { "name": "keyword.operator.conditional.inline.lark" },
-        "2": { "name": "support.function.rule.lark" },
-        "4": { "name": "constant.numeric.priority.lark" },
-        "5": { "name": "punctuation.separator.colon.lark" }
-      },
-      "end": "(?=(^\\s*([a-zA-Z_][a-zA-Z0-9_]*|%|//|/\\*)))",
-      "patterns": [ { "include": "#rule-body-tokens" } ]
-    },
-    "rule-definitions-pinned": {
-      "name": "meta.definition.rule.pinned.lark",
-      "begin": "^\\s*(!)([a-z_][a-z0-9_]*|(?=\"))(\\s*\\.\\s*(-?\\d+))?\\s*(:)",
-      "beginCaptures": {
-        "1": { "name": "keyword.operator.priority.lark" },
-        "2": { "name": "support.function.rule.lark" },
-        "4": { "name": "constant.numeric.priority.lark" },
-        "5": { "name": "punctuation.separator.colon.lark" }
-      },
-      "end": "(?=(^\\s*([a-zA-Z_][a-zA-Z0-9_]*|%|//|/\\*)))",
-      "patterns": [ { "include": "#rule-body-tokens" } ]
-    },
-    "rule-definition": {
-      "name": "meta.definition.rule.lark",
-      "begin": "^\\s*([a-z_][a-z0-9_]*|(?=\"))(\\s*\\.\\s*(-?\\d+))?\\s*(:)",
-      "beginCaptures": {
-        "1": { "name": "support.function.rule.lark" },
-        "3": { "name": "constant.numeric.priority.lark" },
-        "4": { "name": "punctuation.separator.colon.lark" }
-      },
-      "end": "(?=(^\\s*([a-zA-Z_][a-zA-Z0-9_]*|%|//|/\\*)))",
-      "patterns": [ { "include": "#rule-body-tokens" } ]
-    },
-    "rule-body-tokens": {
-      "patterns": [
+    "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+    "name": "Lark",
+    "comment": "VSCode Syntax Parser for Lark grammar files",
+    "foldingStartMarker": "^[^:]+:.*$",
+    "foldingStopMarker": "^\\s+",
+    "scopeName": "source.lark",
+    "patterns": [
         { "include": "#comments" },
-        { "include": "#base-tokens" },
-        {
-          "name": "keyword.operator.quantifier.lark",
-          "match": "[?*+]"
+        { "include": "#ignore-directive" },
+        { "include": "#override-extend-directive" },
+        { "include": "#declare-directive" },
+        { "include": "#import-directive" },
+        { "include": "#terminal-definitions" },
+        { "include": "#rule-definitions-conditional-inline" },
+        { "include": "#rule-definitions-pinned" },
+        { "include": "#rule-definition" }
+    ],
+    "repository": {
+        "comments": {
+            "patterns": [
+                {
+                    "name": "comment.line.double-slash.lark",
+                    "match": "//.*$"
+                }
+            ]
         },
-        {
-          "name": "keyword.operator.logical.lark",
-          "match": "\\|"
+        "base-tokens": {
+            "patterns": [{ "include": "#strings" }, { "include": "#regexes" }]
         },
-        {
-          "name": "keyword.operator.priority.lark",
-          "match": "[!?]"
+        "strings": {
+            "patterns": [
+                {
+                    "name": "string.quoted.double.lark",
+                    "begin": "\"",
+                    "end": "\"",
+                    "beginCaptures": {
+                        "0": { "name": "punctuation.definition.string.begin.lark" }
+                    },
+                    "endCaptures": { "0": { "name": "punctuation.definition.string.end.lark" } },
+                    "patterns": [
+                        {
+                            "name": "constant.character.escape.lark",
+                            "match": "\\\\."
+                        }
+                    ]
+                }
+            ]
         },
-        {
-          "name": "punctuation.parenthesis.begin.lark",
-          "match": "\\("
+        "regexes": {
+            "name": "string.regexp.lark",
+            "begin": "(/)",
+            "beginCaptures": { "1": { "name": "punctuation.definition.string.begin.lark" } },
+            "end": "(/[imulx]*)",
+            "endCaptures": { "1": { "name": "punctuation.definition.string.end.lark" } },
+            "patterns": [
+                {
+                    "name": "constant.character.escape.lark",
+                    "match": "\\\\."
+                }
+            ]
         },
-        {
-          "name": "punctuation.parenthesis.end.lark",
-          "match": "\\)"
+        "ignore-directive": {
+            "name": "meta.directive.ignore.lark",
+            "begin": "^\\s*(%)(ignore)\\b",
+            "beginCaptures": {
+                "1": { "name": "storage.modifier.directive.lark" },
+                "2": { "name": "storage.type.directive.lark" }
+            },
+            "end": "(?=$|//)",
+            "patterns": [
+                { "include": "#base-tokens" },
+                {
+                    "name": "support.class.terminal.lark",
+                    "match": "\\b[A-Z_][A-Z0-9_]*\\b"
+                }
+            ]
         },
-        {
-          "name": "meta.alias.lark",
-          "begin": "(->)",
-          "beginCaptures": { "1": { "name": "keyword.operator.alias.lark" } },
-          "end": "(?=$|\\||\\)|//|/\\*)",
-          "patterns": [
-            {
-              "match": "\\b[a-z_][a-z0-9_]*\\b",
-              "name": "support.function.rule.lark"
-            }
-          ]
+        "override-extend-directive": {
+            "name": "meta.directive.override-extend.lark",
+            "begin": "^\\s*(%)(override|extend)\\b",
+            "beginCaptures": {
+                "1": { "name": "storage.modifier.directive.lark" },
+                "2": { "name": "storage.type.directive.lark" }
+            },
+            "end": "(?=$|//)",
+            "patterns": [
+                {
+                    "begin": "\\s*([A-Z_][A-Z0-9_]*)(\\s*\\.\\s*(-?\\d+))?\\s*(:)",
+                    "beginCaptures": {
+                        "1": { "name": "support.class.terminal.lark" },
+                        "3": { "name": "constant.numeric.priority.lark" },
+                        "4": { "name": "punctuation.separator.colon.lark" }
+                    },
+                    "end": "(?=$|//)",
+                    "patterns": [{ "include": "#rule-body-tokens" }]
+                },
+                {
+                    "begin": "\\s*([a-z_][a-z0-9_]*|(?=\"))(\\s*\\.\\s*(-?\\d+))?\\s*(:)",
+                    "beginCaptures": {
+                        "1": { "name": "support.function.rule.lark" },
+                        "3": { "name": "constant.numeric.priority.lark" },
+                        "4": { "name": "punctuation.separator.colon.lark" }
+                    },
+                    "end": "(?=$|//)",
+                    "patterns": [{ "include": "#rule-body-tokens" }]
+                }
+            ]
         },
-        {
-          "name": "support.class.terminal.lark",
-          "match": "\\b[A-Z_][A-Z0-9_]*\\b"
+        "declare-directive": {
+            "name": "meta.directive.declare.lark",
+            "begin": "^\\s*(%)(declare)\\b",
+            "beginCaptures": {
+                "1": { "name": "storage.modifier.directive.lark" },
+                "2": { "name": "storage.type.directive.lark" }
+            },
+            "end": "(?=$|//)",
+            "patterns": [
+                {
+                    "name": "support.class.terminal.lark",
+                    "match": "\\b[A-Z_][A-Z0-9_]*\\b"
+                }
+            ]
         },
-        {
-          "name": "support.function.rule.lark",
-          "match": "\\b[a-z_][a-z0-9_]*\\b"
+        "import-directive": {
+            "name": "meta.directive.import.lark",
+            "begin": "^\\s*(%)(import)\\b",
+            "beginCaptures": {
+                "1": { "name": "storage.modifier.directive.lark" },
+                "2": { "name": "storage.type.directive.lark" }
+            },
+            "end": "(?=$|//)",
+            "patterns": [
+                {
+                    "name": "meta.import.list.lark",
+                    "begin": "\\s*([a-zA-Z_][a-zA-Z0-9_]*)\\s*(\\()",
+                    "beginCaptures": {
+                        "1": { "name": "constant.language.module.lark" },
+                        "2": { "name": "punctuation.parenthesis.begin.lark" }
+                    },
+                    "end": "(\\))",
+                    "endCaptures": { "1": { "name": "punctuation.parenthesis.end.lark" } },
+                    "patterns": [
+                        {
+                            "name": "punctuation.separator.lark",
+                            "match": ","
+                        },
+                        { "include": "#rule-body-tokens" }
+                    ]
+                },
+                {
+                    "name": "meta.import.dotted-alias.rule.lark",
+                    "match": "\\s*([a-zA-Z_][a-zA-Z0-9_]*)(\\.)([a-z_][a-z0-9_]*)\\s*(->)\\s*([a-z_][a-z0-9_]*)\\b",
+                    "captures": {
+                        "1": { "name": "constant.language.module.lark" },
+                        "2": { "name": "punctuation.accessor.lark" },
+                        "3": { "name": "support.function.rule.lark" },
+                        "4": { "name": "keyword.operator.alias.lark" },
+                        "5": { "name": "support.function.rule.lark" }
+                    }
+                },
+                {
+                    "name": "meta.import.dotted-alias.terminal.lark",
+                    "match": "\\s*([a-zA-Z_][a-zA-Z0-9_]*)(\\.)([A-Z_][A-Z0-9_]*)\\s*(->)\\s*([A-Z_][A-Z0-9_]*)\\b",
+                    "captures": {
+                        "1": { "name": "constant.language.module.lark" },
+                        "2": { "name": "punctuation.accessor.lark" },
+                        "3": { "name": "support.class.terminal.lark" },
+                        "4": { "name": "keyword.operator.alias.lark" },
+                        "5": { "name": "support.class.terminal.lark" }
+                    }
+                },
+                {
+                    "name": "meta.import.dotted.rule.lark",
+                    "match": "\\s*([a-zA-Z_][a-zA-Z0-9_]*)(\\.)([a-z_][a-z0-9_]*)\\b",
+                    "captures": {
+                        "1": { "name": "constant.language.module.lark" },
+                        "2": { "name": "punctuation.accessor.lark" },
+                        "3": { "name": "support.function.rule.lark" }
+                    }
+                },
+                {
+                    "name": "meta.import.dotted.terminal.lark",
+                    "match": "\\s*([a-zA-Z_][a-zA-Z0-9_]*)(\\.)([A-Z_][A-Z0-9_]*)\\b",
+                    "captures": {
+                        "1": { "name": "constant.language.module.lark" },
+                        "2": { "name": "punctuation.accessor.lark" },
+                        "3": { "name": "support.class.terminal.lark" }
+                    }
+                }
+            ]
+        },
+        "terminal-definitions": {
+            "name": "meta.definition.terminal.lark",
+            "begin": "^\\s*([A-Z_][A-Z0-9_]*)(\\s*\\.\\s*(-?\\d+))?\\s*(:)",
+            "beginCaptures": {
+                "1": { "name": "support.class.terminal.lark" },
+                "3": { "name": "constant.numeric.priority.lark" },
+                "4": { "name": "punctuation.separator.colon.lark" }
+            },
+            "end": "(?=(^\\s*([a-zA-Z_][a-zA-Z0-9_]*|%|//|/\\*)))",
+            "patterns": [{ "include": "#rule-body-tokens" }]
+        },
+        "rule-definitions-conditional-inline": {
+            "name": "meta.definition.rule.conditional.inline.lark",
+            "begin": "^\\s*(\\?)([a-z][a-z0-9_]*|(?=\"))(\\s*\\.\\s*(-?\\d+))?\\s*(:)",
+            "beginCaptures": {
+                "1": { "name": "keyword.operator.conditional.inline.lark" },
+                "2": { "name": "support.function.rule.lark" },
+                "4": { "name": "constant.numeric.priority.lark" },
+                "5": { "name": "punctuation.separator.colon.lark" }
+            },
+            "end": "(?=(^\\s*([a-zA-Z_][a-zA-Z0-9_]*|%|//|/\\*)))",
+            "patterns": [{ "include": "#rule-body-tokens" }]
+        },
+        "rule-definitions-pinned": {
+            "name": "meta.definition.rule.pinned.lark",
+            "begin": "^\\s*(!)([a-z_][a-z0-9_]*|(?=\"))(\\s*\\.\\s*(-?\\d+))?\\s*(:)",
+            "beginCaptures": {
+                "1": { "name": "keyword.operator.priority.lark" },
+                "2": { "name": "support.function.rule.lark" },
+                "4": { "name": "constant.numeric.priority.lark" },
+                "5": { "name": "punctuation.separator.colon.lark" }
+            },
+            "end": "(?=(^\\s*([a-zA-Z_][a-zA-Z0-9_]*|%|//|/\\*)))",
+            "patterns": [{ "include": "#rule-body-tokens" }]
+        },
+        "rule-definition": {
+            "name": "meta.definition.rule.lark",
+            "begin": "^\\s*([a-z_][a-z0-9_]*|(?=\"))(\\s*\\.\\s*(-?\\d+))?\\s*(:)",
+            "beginCaptures": {
+                "1": { "name": "support.function.rule.lark" },
+                "3": { "name": "constant.numeric.priority.lark" },
+                "4": { "name": "punctuation.separator.colon.lark" }
+            },
+            "end": "(?=(^\\s*([a-zA-Z_][a-zA-Z0-9_]*|%|//|/\\*)))",
+            "patterns": [{ "include": "#rule-body-tokens" }]
+        },
+        "rule-body-tokens": {
+            "patterns": [
+                { "include": "#comments" },
+                { "include": "#base-tokens" },
+                {
+                    "name": "keyword.operator.quantifier.lark",
+                    "match": "[?*+]"
+                },
+                {
+                    "name": "keyword.operator.logical.lark",
+                    "match": "\\|"
+                },
+                {
+                    "name": "keyword.operator.priority.lark",
+                    "match": "[!?]"
+                },
+                {
+                    "name": "punctuation.parenthesis.begin.lark",
+                    "match": "\\("
+                },
+                {
+                    "name": "punctuation.parenthesis.end.lark",
+                    "match": "\\)"
+                },
+                {
+                    "name": "meta.alias.lark",
+                    "begin": "(->)",
+                    "beginCaptures": { "1": { "name": "keyword.operator.alias.lark" } },
+                    "end": "(?=$|\\||\\)|//|/\\*)",
+                    "patterns": [
+                        {
+                            "match": "\\b[a-z_][a-z0-9_]*\\b",
+                            "name": "support.function.rule.lark"
+                        }
+                    ]
+                },
+                {
+                    "name": "support.class.terminal.lark",
+                    "match": "\\b[A-Z_][A-Z0-9_]*\\b"
+                },
+                {
+                    "name": "support.function.rule.lark",
+                    "match": "\\b[a-z_][a-z0-9_]*\\b"
+                }
+            ]
         }
-      ]
     }
-  }
 }
