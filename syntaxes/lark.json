@@ -12,9 +12,7 @@
         { "include": "#declare-directive" },
         { "include": "#import-directive" },
         { "include": "#terminal-definitions" },
-        { "include": "#rule-definitions-conditional-inline" },
-        { "include": "#rule-definitions-pinned" },
-        { "include": "#rule-definition" }
+        { "include": "#rule-definitions" }
     ],
     "repository": {
         "comments": {
@@ -201,37 +199,16 @@
             "end": "(?=(^\\s*([a-zA-Z_][a-zA-Z0-9_]*|%|//|/\\*)))",
             "patterns": [{ "include": "#rule-body-tokens" }]
         },
-        "rule-definitions-conditional-inline": {
-            "name": "meta.definition.rule.conditional.inline.lark",
-            "begin": "^\\s*(\\?)([a-z][a-z0-9_]*|(?=\"))(\\s*\\.\\s*(-?\\d+))?\\s*(:)",
-            "beginCaptures": {
-                "1": { "name": "keyword.operator.conditional.inline.lark" },
-                "2": { "name": "support.function.rule.lark" },
-                "4": { "name": "constant.numeric.priority.lark" },
-                "5": { "name": "punctuation.separator.colon.lark" }
-            },
-            "end": "(?=(^\\s*([a-zA-Z_][a-zA-Z0-9_]*|%|//|/\\*)))",
-            "patterns": [{ "include": "#rule-body-tokens" }]
-        },
-        "rule-definitions-pinned": {
-            "name": "meta.definition.rule.pinned.lark",
-            "begin": "^\\s*(!)([a-z_][a-z0-9_]*|(?=\"))(\\s*\\.\\s*(-?\\d+))?\\s*(:)",
-            "beginCaptures": {
-                "1": { "name": "keyword.operator.priority.lark" },
-                "2": { "name": "support.function.rule.lark" },
-                "4": { "name": "constant.numeric.priority.lark" },
-                "5": { "name": "punctuation.separator.colon.lark" }
-            },
-            "end": "(?=(^\\s*([a-zA-Z_][a-zA-Z0-9_]*|%|//|/\\*)))",
-            "patterns": [{ "include": "#rule-body-tokens" }]
-        },
-        "rule-definition": {
+        "rule-definitions": {
             "name": "meta.definition.rule.lark",
-            "begin": "^\\s*([a-z_][a-z0-9_]*|(?=\"))(\\s*\\.\\s*(-?\\d+))?\\s*(:)",
+            "begin": "^\\s*(?:(!|![?]?|[?]!?)(?=[a-z_]))?([a-z_][a-z0-9_]*)(?:\\{\\s*([a-z_][a-z0-9_]*\\s*(?:(,)\\s*[a-z_][a-z0-9_]*)*)\\s*\\})?(?:\\s*\\.\\s*(-?\\d+))?\\s*(:)",
             "beginCaptures": {
-                "1": { "name": "support.function.rule.lark" },
-                "3": { "name": "constant.numeric.priority.lark" },
-                "4": { "name": "punctuation.separator.colon.lark" }
+                "1": { "name": "keyword.operator.rule.modifier.lark" },
+                "2": { "name": "support.function.rule.lark" },
+                "3": { "name": "support.function.rule.lark" },
+                "4": { "name": "punctuation.separator.comma.lark" },
+                "5": { "name": "constant.numeric.priority.lark" },
+                "6": { "name": "punctuation.separator.colon.lark" }
             },
             "end": "(?=(^\\s*([a-zA-Z_][a-zA-Z0-9_]*|%|//|/\\*)))",
             "patterns": [{ "include": "#rule-body-tokens" }]
