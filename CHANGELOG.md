@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.3.0] - 2025-10-22
+
 ### Added
 
 -   **New Extension Commands**: Enhanced user control and troubleshooting capabilities
