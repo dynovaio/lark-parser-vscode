@@ -15,6 +15,7 @@
         // Modules
         "allowArbitraryExtensions": false,
         "allowImportingTsExtensions": false,
+        "skipLibCheck": true,
         "moduleResolution": "Node16",
         "resolveJsonModule": true,
         "resolvePackageJsonExports": true,
