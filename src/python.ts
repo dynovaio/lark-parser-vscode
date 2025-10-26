@@ -9,7 +9,7 @@ import { PYTHON_VERSION, PYTHON_MAJOR, PYTHON_MINOR } from './constants';
 import { getLanguageServerInfo } from './settings';
 
 export interface IInterpreterDetails {
-    path?: string;
+    path: string;
     resource?: Uri;
 }
 
@@ -69,6 +69,7 @@ export async function getPythonInterpreterFromPythonExtensionAPI(): Promise<stri
     }
 
     const api = await getPythonExtensionAPI();
+
     if (!api) {
         extensionLogger.warn('Python extension API is not available.');
         return undefined;
@@ -85,9 +86,9 @@ export async function getPythonInterpreterFromPythonExtensionAPI(): Promise<stri
         }
 
         extensionLogger.log(
-            `Using Python interpreter from Python extension: ${environment.executable.uri.fsPath}`
+            `Using Python interpreter from Python extension: ${environment.executable.uri?.fsPath}`
         );
-        return environment.executable.uri.fsPath;
+        return environment.executable.uri?.fsPath;
     } catch (error) {
         extensionLogger.error(`Error getting Python interpreter from extension: ${error}`);
         return undefined;

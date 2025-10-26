@@ -22,7 +22,7 @@ export async function getServerOptions(
     useExtensionBundle: boolean
 ): Promise<ServerOptions> {
     const pythonInterpreter = await getPythonInterpreter();
-    const pythonInterpreterPath = pythonInterpreter?.path;
+    const pythonInterpreterPath = pythonInterpreter.path;
 
     const config = workspace.getConfiguration('lark');
     const serverArguments = config.get<string[]>('server.arguments', []);
@@ -60,7 +60,7 @@ export async function startLanguageServer(context: ExtensionContext): Promise<vo
     }
 
     const pythonInterpreter = await getPythonInterpreter();
-    const pythonInterpreterPath = pythonInterpreter?.path;
+    const pythonInterpreterPath = pythonInterpreter.path;
 
     let useExtensionBundle = true;
 
