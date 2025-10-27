@@ -18,7 +18,7 @@
         }
     },
     "license": "Apache-2.0",
-    "icon": "images/_extension_icon.png",
+    "icon": "images/_lark_extension_icon.png",
     "galleryBanner": {
         "color": "#f3f4f6",
         "theme": "light"
@@ -55,10 +55,10 @@
                     ".lark"
                 ],
                 "icon": {
-                    "light": "images/_lark_icon_dark.svg",
-                    "dark": "images/_lark_icon_light.svg"
+                    "light": "images/_lark_file_icon_dark.svg",
+                    "dark": "images/_lark_file_icon_light.svg"
                 },
-                "configuration": "./language-configuration.json"
+                "configuration": "./lark.configuration.json"
             }
         ],
         "grammars": [
@@ -78,6 +78,40 @@
                 }
             }
         ],
+        "configuration": {
+            "type": "object",
+            "title": "Lark",
+            "properties": {
+                "lark.server.enabled": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Enable the Lark Parser Extension"
+                },
+                "lark.server.pythonPath": {
+                    "type": "string",
+                    "default": "",
+                    "description": "Custom path to the python executable. Leave empty to use the bundled server."
+                },
+                "lark.server.arguments": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "default": [],
+                    "description": "Additional arguments for the Lark Parser Language Server"
+                },
+                "lark.trace.server": {
+                    "type": "string",
+                    "enum": [
+                        "off",
+                        "messages",
+                        "verbose"
+                    ],
+                    "default": "off",
+                    "description": "Trace communication between VS Code and the language server"
+                }
+            }
+        },
         "commands": [
             {
                 "command": "lark-parser.showLogs",
@@ -95,39 +129,28 @@
                 "category": "Lark"
             }
         ],
-        "configuration": {
-            "type": "object",
-            "title": "Lark",
-            "properties": {
-                "lark.server.enabled": {
-                    "type": "boolean",
-                    "default": true,
-                    "description": "Enable the Lark Language Server"
-                },
-                "lark.server.pythonPath": {
-                    "type": "string",
-                    "default": "",
-                    "description": "Custom path to the Lark Language Server executable. Leave empty to use the bundled server."
-                },
-                "lark.server.arguments": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    },
-                    "default": [],
-                    "description": "Additional arguments for the language server"
-                },
-                "lark.trace.server": {
-                    "type": "string",
-                    "enum": [
-                        "off",
-                        "messages",
-                        "verbose"
-                    ],
-                    "default": "off",
-                    "description": "Trace communication between VS Code and the language server"
+        "viewsContainers": {
+            "activitybar": [
+                {
+                    "id": "lark-view",
+                    "title": "Lark",
+                    "icon": "./images/_lark_viewcontainer_icon.svg"
                 }
-            }
+            ]
+        },
+        "views": {
+            "lark-view": [
+                {
+                    "id": "lark.rules",
+                    "name": "Rules",
+                    "icon": "file-code"
+                },
+                {
+                    "id": "lark.terminals",
+                    "name": "Terminals",
+                    "icon": "terminal"
+                }
+            ]
         }
     },
     "scripts": {

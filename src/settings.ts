@@ -10,6 +10,6 @@ export interface ILanguageServerInfo {
     package: ILanguageServerPackageInfo;
 }
 
-export function getLanguageServerInfo(): ILanguageServerInfo | undefined {
-    return PACKAGE_JSON.languageServerInfo as ILanguageServerInfo | undefined;
+export function getLanguageServerInfo(): ILanguageServerInfo {
+    return PACKAGE_JSON.languageServerInfo as ILanguageServerInfo;
 }
