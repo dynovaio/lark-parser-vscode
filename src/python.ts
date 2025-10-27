@@ -240,7 +240,7 @@ export class PythonEnvironment {
     }
 
     async isLarkLanguageServerVersionSupported(): Promise<boolean> {
-        extensionLogger.log('Checking Lark Parser Language version...');
+        extensionLogger.log('Checking Lark Parser Language Server version...');
 
         const semverRegex = /^(\d+)\.(\d+)\.(\d+)(?:-(.+))?$/;
         const languageServerInfo = getLanguageServerInfo();
