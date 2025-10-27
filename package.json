@@ -85,12 +85,12 @@
                 "lark.server.enabled": {
                     "type": "boolean",
                     "default": true,
-                    "description": "Enable the Lark Language Server"
+                    "description": "Enable the Lark Parser Extension"
                 },
                 "lark.server.pythonPath": {
                     "type": "string",
                     "default": "",
-                    "description": "Custom path to the Lark Language Server executable. Leave empty to use the bundled server."
+                    "description": "Custom path to the python executable. Leave empty to use the bundled server."
                 },
                 "lark.server.arguments": {
                     "type": "array",
@@ -98,7 +98,7 @@
                         "type": "string"
                     },
                     "default": [],
-                    "description": "Additional arguments for the language server"
+                    "description": "Additional arguments for the Lark Parser Language Server"
                 },
                 "lark.trace.server": {
                     "type": "string",
@@ -141,12 +141,14 @@
         "views": {
             "lark-view": [
                 {
-                    "id": "lark.terminals",
-                    "name": "Terminals"
+                    "id": "lark.rules",
+                    "name": "Rules",
+                    "icon": "file-code"
                 },
                 {
-                    "id": "lark.rules",
-                    "name": "Rules"
+                    "id": "lark.terminals",
+                    "name": "Terminals",
+                    "icon": "terminal"
                 }
             ]
         }
