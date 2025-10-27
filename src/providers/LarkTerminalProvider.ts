@@ -9,10 +9,12 @@ import {
     SymbolInformation,
     DocumentSymbol,
     SymbolKind,
-    Uri
+    Uri,
+    Command
 } from 'vscode';
 import { extensionLogger } from '../logger';
 import { LarkTreeDataProvider } from './LarkTreeDataProvier';
+import { getLanguageServerInfo } from '../settings';
 
 export class LarkTerminal extends TreeItem {
     public override iconPath: IconPath = {
@@ -24,9 +26,11 @@ export class LarkTerminal extends TreeItem {
 
     constructor(
         public override readonly label: string,
-        public override readonly collapsibleState: TreeItemCollapsibleState
+        public override readonly collapsibleState: TreeItemCollapsibleState,
+        command?: Command
     ) {
         super(label, collapsibleState);
+        this.command = command;
     }
 }
 
@@ -55,8 +59,17 @@ export class LarkTerminalProvider extends LarkTreeDataProvider<LarkTerminal> {
         } else {
             for (const symbol of symbols) {
                 if (symbol.kind === SymbolKind.Constant) {
+                    const { module: languageServerModule } = getLanguageServerInfo();
+                    const range =
+                        symbol instanceof DocumentSymbol ? symbol.range : symbol.location.range;
+
+                    const command: Command = {
+                        title: 'Go to Terminal',
+                        command: `${languageServerModule}.revealRange`,
+                        arguments: [this.document, range]
+                    };
                     this.children.push(
-                        new LarkTerminal(symbol.name, TreeItemCollapsibleState.None)
+                        new LarkTerminal(symbol.name, TreeItemCollapsibleState.None, command)
                     );
                 }
             }
