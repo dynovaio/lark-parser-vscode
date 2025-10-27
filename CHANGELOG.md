@@ -43,7 +43,7 @@
 
 ### Added
 
--   **Language Server Protocol (LSP) support**: Full implementation of Lark Language Server for enhanced code intelligence
+-   **Language Server Protocol (LSP) support**: Full implementation of Lark Parser Language Server for enhanced code intelligence
     -   Bundled Lark Parser Language Server (v0.2.0) for out-of-the-box functionality
     -   Configurable language server settings with custom Python path support
     -   Language server trace options for debugging
