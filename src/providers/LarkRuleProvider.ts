@@ -9,10 +9,12 @@ import {
     SymbolInformation,
     DocumentSymbol,
     SymbolKind,
-    Uri
+    Uri,
+    Command
 } from 'vscode';
 import { extensionLogger } from '../logger';
 import { LarkTreeDataProvider } from './LarkTreeDataProvier';
+import { getLanguageServerInfo } from '../settings';
 
 export class LarkRule extends TreeItem {
     public override iconPath: IconPath = {
@@ -24,9 +26,11 @@ export class LarkRule extends TreeItem {
 
     constructor(
         public override readonly label: string,
-        public override readonly collapsibleState: TreeItemCollapsibleState
+        public override readonly collapsibleState: TreeItemCollapsibleState,
+        command?: Command
     ) {
         super(label, collapsibleState);
+        this.command = command;
     }
 }
 
@@ -52,7 +56,18 @@ export class LarkRuleProvider extends LarkTreeDataProvider<LarkRule> {
         } else {
             for (const symbol of symbols) {
                 if (symbol.kind === SymbolKind.Method) {
-                    this.children.push(new LarkRule(symbol.name, TreeItemCollapsibleState.None));
+                    const { module: languageServerModule } = getLanguageServerInfo();
+                    const range =
+                        symbol instanceof DocumentSymbol ? symbol.range : symbol.location.range;
+
+                    const command: Command = {
+                        title: 'Go to Rule',
+                        command: `${languageServerModule}.revealRange`,
+                        arguments: [this.document, range]
+                    };
+                    this.children.push(
+                        new LarkRule(symbol.name, TreeItemCollapsibleState.None, command)
+                    );
                 }
             }
         }
