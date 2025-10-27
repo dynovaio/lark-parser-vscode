@@ -5,7 +5,8 @@ import {
     LanguageClientOptions,
     ServerOptions,
     TransportKind,
-    Middleware
+    Middleware,
+    Executable
 } from 'vscode-languageclient/node';
 import { extensionLogger } from './logger';
 import { PythonEnvironment } from './python';
@@ -92,9 +93,15 @@ export class LarkClient {
                 'Lark Parser Language Server is not installed or outdated. Installing...'
             );
             await this.environment.installLarkLanguageServer();
+            this.useExtensionBundle = true;
         }
 
-        const serverOptions = await this.getServerOptions();
+        const serverOptions = (await this.getServerOptions()) as Executable;
+
+        extensionLogger.log('Server options for Lark Parser Language Server obtained.');
+        extensionLogger.log(`Server command: ${serverOptions.command}`);
+        extensionLogger.log(`Server arguments: ${serverOptions.args?.join(' ')}`);
+
         const clientOptions = await this.getClientOptions();
 
         this.client = new LanguageClient(
