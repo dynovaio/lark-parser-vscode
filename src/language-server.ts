@@ -36,7 +36,7 @@ export class LarkClient {
         let languageServerCommandArgs: string[] = ['-m', 'lark_parser_language_server'];
 
         if (this.useExtensionBundle) {
-            extensionLogger.log('Using bundled Lark Parser Language from the extension.');
+            extensionLogger.log('Using bundled Lark Parser Language Server from the extension.');
             const extensionRoot = this.context.extensionPath;
             const bundledEnvironmentPath = path.join(extensionRoot, 'bundled');
             const entryPointPath = path.join(bundledEnvironmentPath, 'entrypoint.py');
@@ -47,7 +47,7 @@ export class LarkClient {
     }
 
     async getServerOptions(): Promise<ServerOptions> {
-        extensionLogger.log('Getting server options for Lark Parser Language...');
+        extensionLogger.log('Getting server options for Lark Parser Language Server...');
 
         return {
             command: await this.environment.getInterpreterPath(),
@@ -77,7 +77,7 @@ export class LarkClient {
         const config = workspace.getConfiguration('lark');
 
         if (!config.get<boolean>('server.enabled', true)) {
-            console.log('Lark Parser Language is disabled');
+            console.log('Lark Parser Language Server is disabled');
             return;
         }
 
@@ -108,23 +108,23 @@ export class LarkClient {
 
     async start(): Promise<void> {
         if (!this.client) {
-            extensionLogger.log('Lark Parser Language is not initialized.');
+            extensionLogger.log('Lark Parser Language Server is not initialized.');
             this.isInitialized = false;
             return Promise.resolve();
         }
 
-        extensionLogger.log('Starting Lark Parser Language...');
+        extensionLogger.log('Starting Lark Parser Language Server...');
         return await this.client.start();
     }
 
     async stop(): Promise<void> {
         if (!this.client) {
-            extensionLogger.log('Lark Parser Language is not running.');
+            extensionLogger.log('Lark Parser Language Server is not running.');
             this.isInitialized = false;
             return Promise.resolve();
         }
 
-        extensionLogger.log('Stopping Lark Parser Language...');
+        extensionLogger.log('Stopping Lark Parser Language Server...');
         await this.client.stop();
         this.client = undefined;
         this.isInitialized = false;
