@@ -5,6 +5,12 @@ import { getLanguageServerInfo } from './settings';
 import { PythonExtension, PythonInterpreter, PythonEnvironment } from './python';
 import { LarkTerminalProvider } from './providers/LarkTerminalProvider';
 import { LarkRuleProvider } from './providers/LarkRuleProvider';
+import {
+    registerShowLogsCommand,
+    registerRestartCommand,
+    registerRemoveCommand,
+    registerRevealRangeCommand
+} from './commands';
 
 let larkClient: LarkClient;
 
@@ -42,38 +48,24 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         extensionOutputChannel,
         extensionTraceOutputChannel
     );
-    await larkClient.initialize();
 
-    const showLogsCommand = vscode.commands.registerCommand(
-        `${languageServerModule}.showLogs`,
-        () => {
-            extensionOutputChannel.show();
-        }
+    const showLogsCommand = registerShowLogsCommand(languageServerModule);
+    const restartCommand = registerRestartCommand(
+        languageServerModule,
+        languageServerName,
+        larkClient
     );
-
-    const restartCommand = vscode.commands.registerCommand(
-        `${languageServerModule}.restartServer`,
-        async () => {
-            extensionLogger.log(`Restarting the ${languageServerName} Language Server...`);
-            await larkClient.stop();
-            await larkClient.initialize();
-            await larkClient.start();
-            vscode.window.showInformationMessage(`${languageServerName} Language Server restarted`);
-        }
+    const removeCommand = registerRemoveCommand(
+        languageServerModule,
+        languageServerName,
+        pythonEnvironment
     );
-
-    const removeCommand = vscode.commands.registerCommand(
-        `${languageServerModule}.removeBundledEnvironment`,
-        async () => {
-            extensionLogger.log(`Removing bundled environment for ${languageServerName}...`);
-            await pythonEnvironment.remove();
-            vscode.window.showInformationMessage(`Bundled environment removed`);
-        }
-    );
+    const revealRangeCommand = registerRevealRangeCommand(languageServerModule);
 
     context.subscriptions.push(showLogsCommand);
     context.subscriptions.push(restartCommand);
     context.subscriptions.push(removeCommand);
+    context.subscriptions.push(revealRangeCommand);
     context.subscriptions.push(
         vscode.window.registerTreeDataProvider('lark.terminals', larkTerminalProvider)
     );
@@ -81,6 +73,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         vscode.window.registerTreeDataProvider('lark.rules', larkRuleProvider)
     );
 
+    await larkClient.initialize();
     await larkClient.start();
 }
 
