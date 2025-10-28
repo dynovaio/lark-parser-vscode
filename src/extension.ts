@@ -96,6 +96,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
     await larkClient.initialize();
     await larkClient.start();
+
+    extensionLogger.log(`${languageServerName} extension activated successfully.`);
 }
 
 export function deactivate(): Thenable<void> | undefined {
