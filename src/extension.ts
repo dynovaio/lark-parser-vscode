@@ -11,14 +11,21 @@ import {
     registerRemoveCommand,
     registerRevealRangeCommand
 } from './commands';
+import { LarkTerminal } from './providers/LarkTerminalProvider';
+import { LarkRule } from './providers/LarkRuleProvider';
+import {
+    registerClearViewDisposable,
+    registerPopulateViewDisposable,
+    registerRequestSymbolsDisposable
+} from './disposables';
 
 let larkClient: LarkClient;
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
+    const { name: languageServerName, module: languageServerModule } = getLanguageServerInfo();
+
     context.subscriptions.push(extensionOutputChannel);
     context.subscriptions.push(extensionTraceOutputChannel);
-
-    const { name: languageServerName, module: languageServerModule } = getLanguageServerInfo();
 
     extensionLogger.log(`Activating ${languageServerName} extension...`);
 
@@ -29,8 +36,19 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     const larkTerminalProvider = new LarkTerminalProvider(
         vscode.window.activeTextEditor?.document!
     );
+    const populateTerminalViewDisposable = registerPopulateViewDisposable<LarkTerminal>(
+        'lark.terminals',
+        larkTerminalProvider
+    );
+    const clearTerminalViewDisposable =
+        registerClearViewDisposable<LarkTerminal>(larkTerminalProvider);
 
     const larkRuleProvider = new LarkRuleProvider(vscode.window.activeTextEditor?.document!);
+    const populateRuleViewDisposable = registerPopulateViewDisposable<LarkRule>(
+        'lark.rules',
+        larkRuleProvider
+    );
+    const clearRuleViewDisposable = registerClearViewDisposable<LarkRule>(larkRuleProvider);
 
     larkClient = new LarkClient(
         context,
@@ -39,8 +57,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
             provideDocumentSymbols: async (document, token, next) => {
                 const response = await next(document, token);
 
-                larkTerminalProvider.captureTerminals(document, response ?? []);
-                larkRuleProvider.captureRules(document, response ?? []);
+                larkTerminalProvider.captureChildren(document, response ?? []);
+                larkRuleProvider.captureChildren(document, response ?? []);
 
                 return response;
             }
@@ -62,16 +80,19 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     );
     const revealRangeCommand = registerRevealRangeCommand(languageServerModule);
 
+    const documentSymbolsDisposable = registerRequestSymbolsDisposable(larkClient);
+
     context.subscriptions.push(showLogsCommand);
     context.subscriptions.push(restartCommand);
     context.subscriptions.push(removeCommand);
     context.subscriptions.push(revealRangeCommand);
-    context.subscriptions.push(
-        vscode.window.registerTreeDataProvider('lark.terminals', larkTerminalProvider)
-    );
-    context.subscriptions.push(
-        vscode.window.registerTreeDataProvider('lark.rules', larkRuleProvider)
-    );
+    context.subscriptions.push(populateTerminalViewDisposable);
+    context.subscriptions.push(clearTerminalViewDisposable);
+    context.subscriptions.push(populateRuleViewDisposable);
+    context.subscriptions.push(clearRuleViewDisposable);
+    context.subscriptions.push(documentSymbolsDisposable);
+
+    extensionLogger.log(`Initializing ${languageServerName} Language Server...`);
 
     await larkClient.initialize();
     await larkClient.start();

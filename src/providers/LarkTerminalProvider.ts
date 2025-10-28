@@ -4,7 +4,6 @@ import {
     TextDocument,
     TreeItem,
     TreeItemCollapsibleState,
-    ProviderResult,
     IconPath,
     SymbolInformation,
     DocumentSymbol,
@@ -14,7 +13,7 @@ import {
 } from 'vscode';
 import { extensionLogger } from '../logger';
 import { LarkTreeDataProvider } from './LarkTreeDataProvier';
-import { getLanguageServerInfo } from '../settings';
+import { getLanguageInfo, getLanguageServerInfo } from '../settings';
 
 export class LarkTerminal extends TreeItem {
     public override iconPath: IconPath = {
@@ -35,46 +34,36 @@ export class LarkTerminal extends TreeItem {
 }
 
 export class LarkTerminalProvider extends LarkTreeDataProvider<LarkTerminal> {
-    private children: LarkTerminal[] = [];
+    protected symbolKind: SymbolKind = SymbolKind.Constant;
 
-    override getChildren(element?: LarkTerminal): ProviderResult<LarkTerminal[]> {
-        return new Promise((resolve) => {
-            if (element) {
-                resolve([]);
-            } else {
-                resolve(this.children);
-            }
-        });
-    }
+    captureChildren(document: TextDocument, symbols: SymbolInformation[] | DocumentSymbol[]): void {
+        const capturedChildren: LarkTerminal[] = [];
 
-    captureTerminals(
-        document: TextDocument,
-        symbols: SymbolInformation[] | DocumentSymbol[]
-    ): void {
-        this.document = document;
-        this.children = [];
+        const { id: languageId } = getLanguageInfo();
 
-        if (!symbols || symbols.length === 0) {
+        if (document.languageId !== languageId || !symbols || symbols.length === 0) {
             extensionLogger.log('LarkTerminalProvider: No symbols found.');
-        } else {
-            for (const symbol of symbols) {
-                if (symbol.kind === SymbolKind.Constant) {
-                    const { module: languageServerModule } = getLanguageServerInfo();
-                    const range =
-                        symbol instanceof DocumentSymbol ? symbol.range : symbol.location.range;
+            return;
+        }
 
-                    const command: Command = {
-                        title: 'Go to Terminal',
-                        command: `${languageServerModule}.revealRange`,
-                        arguments: [this.document, range]
-                    };
-                    this.children.push(
-                        new LarkTerminal(symbol.name, TreeItemCollapsibleState.None, command)
-                    );
-                }
+        for (const symbol of symbols) {
+            if (symbol.kind === this.symbolKind) {
+                const { module: languageServerModule } = getLanguageServerInfo();
+                const range =
+                    symbol instanceof DocumentSymbol ? symbol.range : symbol.location.range;
+
+                const command: Command = {
+                    title: 'Go to Rule',
+                    command: `${languageServerModule}.revealRange`,
+                    arguments: [document, range]
+                };
+                capturedChildren.push(
+                    new LarkTerminal(symbol.name, TreeItemCollapsibleState.None, command)
+                );
             }
         }
 
-        this.refresh();
+        this.document = document;
+        this.setChildren(capturedChildren);
     }
 }

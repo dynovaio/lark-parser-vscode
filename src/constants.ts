@@ -10,7 +10,7 @@ export const PACKAGE_JSON = JSON.parse(fs.readFileSync(PACKAGE_JSON_PATH, 'utf8'
 export const EXTENSION_ID = `${PACKAGE_JSON.publisher}.${PACKAGE_JSON.name}`;
 export const LANGUAGE_SERVER_RESTART_DELAY = 1000;
 
-// Python extension
+// Python related settings
 export const PYTHON_MAJOR = 3;
 export const PYTHON_MINOR = 9;
 export const PYTHON_VERSION = `${PYTHON_MAJOR}.${PYTHON_MINOR}`;
