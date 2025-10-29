@@ -66,7 +66,7 @@ Optional settings you can add to your `settings.json`:
     "lark.server.enabled": true,
     "lark.server.pythonPath": "pythonPath",
     "lark.server.arguments": ["--log-level", "INFO"],
-    "lark.trace.server": "off"
+    "lark.server.trace": "off"
 }
 ```
 

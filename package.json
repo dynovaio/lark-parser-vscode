@@ -100,7 +100,7 @@
                     "default": [],
                     "description": "Additional arguments for the Lark Parser Language Server"
                 },
-                "lark.trace.server": {
+                "lark.server.trace": {
                     "type": "string",
                     "enum": [
                         "off",
