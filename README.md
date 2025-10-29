@@ -151,8 +151,8 @@ independently by [Dynova ↗][dynova-homepage] as an open source project.
 [badge-language]: https://img.shields.io/badge/Language-Lark-blue.svg?maxAge=2592000&style=flat-square
 [badge-tool]: https://img.shields.io/badge/Tool-Visual%20Studio%20Code-blue.svg?maxAge=2592000&style=flat-square
 [repository]: https://github.com/dynovaio/lark-parser-vscode
-[repository-example-1]: https://github.com/dynovaio/lark-parser-vscode/raw/develop/images/_lark_sample_1.png
-[repository-example-2]: https://github.com/dynovaio/lark-parser-vscode/raw/develop/images/_lark_sample_2.png
+[repository-example-1]: https://github.com/dynovaio/lark-parser-vscode/raw/develop/images/_lark_feature_sample_1.png
+[repository-example-2]: https://github.com/dynovaio/lark-parser-vscode/raw/develop/images/_lark_feature_sample_2.png
 [dynova.vscode-lark]: https://marketplace.visualstudio.com/items?itemName=dynova.vscode-lark
 [contributing]: https://github.com/dynovaio/lark-parser-vscode/blob/develop/CONTRIBUTING.md
 [changelog]: https://github.com/dynovaio/lark-parser-vscode/blob/develop/CHANGELOG.md
