@@ -1,8 +1,10 @@
 [![Community-Project][dynova-banner-community]][dynova-homepage]
 
-[![Apache 2 License][badge-license]][repository]
 [![Lark][badge-language]][repository]
 [![Visual Studio Code][badge-tool]][repository]
+[![Apache 2 License][badge-license]][repository]
+[![Visual Studio Marketplace][vsm-version]][repository]
+[![Visual Studio Marketplace][vsm-installs]][repository]
 
 # Lark for Visual Studio Code
 
@@ -59,7 +61,7 @@ The VS Code Lark Parser extension provides rich language support for Lark gramma
    [[↗][dynova.vscode-lark]] by Dynova [[↗][dynova-homepage]].
 5. Once installed, you can start using Lark syntax highlighting and intellisense in your `.lark` files.
 
-## Requirements
+## 🛠️ Requirements
 
 -   **Python 3.9+**: Required for the language server
 
@@ -67,7 +69,7 @@ The extension automatically uses its bundled dependencies and doesn't require Po
 
 Note: The extension can either use the bundled Python environment shipped with the extension or a user-specified Python interpreter (see Configuration). A new command is available to remove the bundled environment if you need a clean re-installation.
 
-## Configuration
+## ⚙️ Configuration
 
 Optional settings you can add to your `settings.json`:
 
@@ -115,26 +117,26 @@ Virtual workspace support:
 
 -   The extension detects virtual workspaces (for example, GitHub Codespaces or remote editors) and adjusts the document selector to include non-file schemes so language features remain available.
 
-## Release Notes
+## 📝 Release Notes
 
 All changes are listed in our [change log ↗][changelog].
 
-## Contributing
+## 🤝 Contributing
 
 Contributions are greatly appreciated. Check the [contribution guidelines ↗][contributing] for more information.
 
 Please fork this repository and open a pull request to make grammar tweaks, add support for other subgrammars etc.
 
-## Contributors
+## 👥 Contributors
 
 See the list of contributors in our [contributors page ↗][contributors].
 
-## License
+## 📜 License
 
 This project is licensed under the terms of the Apache-2.0 license. See the
 [LICENSE ↗][license] file.
 
-## Disclaimer
+## ⚠️ Disclaimer
 
 The Lark Parser team already provides an extension for Visual Studio Code that
 includes syntax highlighting as part of the
@@ -147,6 +149,8 @@ independently by [Dynova ↗][dynova-homepage] as an open source project.
 
 [dynova-homepage]: https://dynova.io
 [dynova-banner-community]: https://gitlab.com/softbutterfly/open-source/open-source-office/-/raw/master/assets/dynova/dynova-open-source--banner--community-project.png
+[vsm-version]: https://img.shields.io/visual-studio-marketplace/v/dynova.vscode-lark-parser?maxAge=2592000&style=flat-square
+[vsm-installs]: https://img.shields.io/visual-studio-marketplace/i/dynova.vscode-lark-parser?maxAge=2592000&style=flat-square
 [badge-license]: https://img.shields.io/badge/license-Apache%202.0-blue.svg?maxAge=2592000&style=flat-square
 [badge-language]: https://img.shields.io/badge/Language-Lark-blue.svg?maxAge=2592000&style=flat-square
 [badge-tool]: https://img.shields.io/badge/Tool-Visual%20Studio%20Code-blue.svg?maxAge=2592000&style=flat-square
