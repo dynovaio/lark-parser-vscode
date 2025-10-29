@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.4.0] - 2025-10-29
+
 ### Added
 
 -   **New Views and Providers**: Introduced new Lark views and provider infrastructure
