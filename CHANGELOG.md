@@ -2,6 +2,41 @@
 
 ## [Unreleased]
 
+### Added
+
+-   **New Views and Providers**: Introduced new Lark views and provider infrastructure
+    -   Generic `LarkTreeDataProvider` used to build view-specific providers
+    -   `LarkTerminalProvider` and `LarkRuleProvider` for the Terminals and Rules views
+    -   View container and view contributions for better workspace visibility
+    -   Icons for terminal and rule views
+-   **New Commands & Registration Improvements**: Better command isolation and new actions
+    -   Isolated command registration and improved command wiring in the extension
+    -   `revealRange` command and support for passing command args to terminal/rule items
+
+### Changed
+
+-   **Language Server Client & Python environment**: refactors and reliability improvements
+    -   Refactored language server client initialization and Python environment handling
+    -   Correct assignment of `useExtensionBundle` during client initialization
+    -   Added constants for python environment handling
+-   **Configuration and naming updates**
+    -   Renamed setting `lark.trace.server` to `lark.server.trace` for clarity
+    -   Renamed `language-configuration.json` to `lark.configuration.json` and updated icon/file names
+    -   Updated `contributes` to include view containers and views
+
+### Fixed
+
+-   **Views and UI fixes**
+    -   Corrected handling of Rules and Terminals views when the active editor changes
+    -   Fixed various text references to the Lark Parser Language Server across the codebase
+-   **Build & lint fixes**
+    -   Fixed lint errors caused by `strict` changes and adjusted `tsconfig` (added `skipLibCheck`)
+
+### Technical Improvements
+
+-   Continued refactoring for maintainability: moved disposables initialization to `disposables.ts`, reorganized providers and extension classes
+-   Small UX and developer experience improvements: activation log confirmation and other debugging/logging enhancements
+
 ## [0.3.0] - 2025-10-22
 
 ### Added
